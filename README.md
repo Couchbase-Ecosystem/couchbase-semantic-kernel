@@ -1,1 +1,0 @@
-# couchbase-semantic-kernel
