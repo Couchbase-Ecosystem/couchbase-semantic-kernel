@@ -36,7 +36,7 @@ public class CouchbaseServiceCollectionExtensionsTests
     {
         // Arrange
         // Act
-        this._serviceCollection.AddCouchbaseVectorStore("couchbases://cb.hlcup4o4jmjr55yf.cloud.couchbase.com", "Adminn", "Azad@12345", "vector-search-testing", "shared");
+        this._serviceCollection.AddCouchbaseVectorStore("", "", "", "", "");
 
         var serviceProvider = this._serviceCollection.BuildServiceProvider();
         var vectorStore = serviceProvider.GetRequiredService<IVectorStore>();
@@ -54,12 +54,12 @@ public class CouchbaseServiceCollectionExtensionsTests
     {
         // Act
         this._serviceCollection.AddCouchbaseVectorStoreRecordCollection<TestRecord>(
-            "couchbases://cb.hlcup4o4jmjr55yf.cloud.couchbase.com",
-            "Adminn",
-            "Azad@12345",
-            "vector-search-testing",
-            "shared",
-            "mistralai");
+            "",
+            "",
+            "",
+            "",
+            "",
+            "");
 
         // Assert
         this.AssertVectorStoreRecordCollectionCreated();
