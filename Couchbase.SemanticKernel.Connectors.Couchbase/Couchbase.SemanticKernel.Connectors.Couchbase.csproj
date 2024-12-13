@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Functions\" />
+      <Folder Include="Http\" />
+      <Folder Include="Linq\" />
+      <Folder Include="Schema\" />
+      <Folder Include="System\" />
+      <Folder Include="Text\" />
+      <Folder Include="Type\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AIToolbox.SemanticKernel.Connectors.Memory.MongoDB" Version="0.1.0-alpha" />
+      <PackageReference Include="CouchbaseNetClient" Version="3.6.4" />
+      <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.0.0-preview.1.24523.1" />
+      <PackageReference Include="Microsoft.SemanticKernel" Version="1.29.0" />
+      <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.29.0" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,21 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.Connectors.Couchbase", "Couchbase.SemanticKernel.Connectors.Couchbase\Couchbase.SemanticKernel.Connectors.Couchbase.csproj", "{5D02D3E3-356F-4F12-B532-3FAD33A9836B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests", "Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests\Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests.csproj", "{7BD1F3B0-031C-47A5-A532-F8D65890A754}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5D02D3E3-356F-4F12-B532-3FAD33A9836B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D02D3E3-356F-4F12-B532-3FAD33A9836B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D02D3E3-356F-4F12-B532-3FAD33A9836B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D02D3E3-356F-4F12-B532-3FAD33A9836B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BD1F3B0-031C-47A5-A532-F8D65890A754}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BD1F3B0-031C-47A5-A532-F8D65890A754}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BD1F3B0-031C-47A5-A532-F8D65890A754}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BD1F3B0-031C-47A5-A532-F8D65890A754}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
