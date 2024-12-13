@@ -1,6 +1,7 @@
 bin/
 obj/
 .idea/
+*.iml
 *.user
 *.suo
 *.log
