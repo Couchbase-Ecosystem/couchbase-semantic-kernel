@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
-using Connectors.Memory.Couchbase;
-using Connectors.Memory.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
 using Couchbase.KeyValue;
 using Couchbase.Management.Collections;
 using Microsoft.Extensions.VectorData;

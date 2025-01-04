@@ -1,6 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using Connectors.Memory.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
 using Microsoft.Extensions.VectorData;
 
 namespace Couchbase.SemanticKernel.Connectors.Couchbase;
@@ -8,7 +7,7 @@ namespace Couchbase.SemanticKernel.Connectors.Couchbase;
 /// <summary>
 /// A mapper that maps between the generic Semantic Kernel data model and the model that the data is stored under, within Couchbase.
 /// </summary>
-internal sealed class CouchbaseGenericDataModelMapper : IVectorStoreRecordMapper<VectorStoreGenericDataModel<string>, JsonObject>
+internal sealed class CouchbaseGenericDataModelMapper : IVectorStoreRecordMapper<VectorStoreGenericDataModel<string>, VectorStoreGenericDataModel<string>>
 {
     /// <summary>A <see cref="JsonSerializerOptions"/> for serialization/deserialization of data properties</summary>
     private readonly JsonSerializerOptions _jsonSerializerOptions;
@@ -32,77 +31,45 @@ internal sealed class CouchbaseGenericDataModelMapper : IVectorStoreRecordMapper
         this._jsonSerializerOptions = jsonSerializerOptions;
     }
 
-    public JsonObject MapFromDataToStorageModel(VectorStoreGenericDataModel<string> dataModel)
+    /// <inheritdoc />
+    public VectorStoreGenericDataModel<string> MapFromDataToStorageModel(VectorStoreGenericDataModel<string> dataModel)
     {
         Verify.NotNull(dataModel);
 
-        var jsonObject = new JsonObject();
-
-        // Loop through all known properties and map each from the data model to the storage model.
-        foreach (var property in this._properties)
-        {
-            var storagePropertyName = this._storagePropertyNames[property.DataModelPropertyName];
-
-            if (property is VectorStoreRecordKeyProperty)
-            {
-                jsonObject[storagePropertyName] = dataModel.Key;
-            }
-            else if (property is VectorStoreRecordDataProperty dataProperty)
-            {
-                if (dataModel.Data is not null && dataModel.Data.TryGetValue(dataProperty.DataModelPropertyName, out var dataValue))
-                {
-                    jsonObject[storagePropertyName] = dataValue is not null
-                        ? JsonSerializer.SerializeToNode(dataValue, dataProperty.PropertyType, this._jsonSerializerOptions)
-                        : null;
-                }
-            }
-            else if (property is VectorStoreRecordVectorProperty vectorProperty)
-            {
-                if (dataModel.Vectors is not null && dataModel.Vectors.TryGetValue(vectorProperty.DataModelPropertyName, out var vectorValue))
-                {
-                    jsonObject[storagePropertyName] = vectorValue is not null
-                        ? JsonSerializer.SerializeToNode(vectorValue, vectorProperty.PropertyType)
-                        : null;
-                }
-            }
-        }
-
-        return jsonObject;
+        return dataModel;
     }
 
-    public VectorStoreGenericDataModel<string> MapFromStorageToDataModel(JsonObject storageModel, StorageToDataModelMapperOptions options)
+    /// <inheritdoc />
+    public VectorStoreGenericDataModel<string> MapFromStorageToDataModel(VectorStoreGenericDataModel<string> storageModel, StorageToDataModelMapperOptions options)
     {
         Verify.NotNull(storageModel);
 
-        // Create variables to store the response properties.
-        string? key = null;
+        // Extract key, data properties, and vectors
+        var key = storageModel.Key;
         var dataProperties = new Dictionary<string, object?>();
         var vectorProperties = new Dictionary<string, object?>();
 
-        // Loop through all known properties and map each from the storage model to the data model.
+        // Map properties from storage to data model
         foreach (var property in this._properties)
         {
-            var storagePropertyName = this._storagePropertyNames[property.DataModelPropertyName];
-
             if (property is VectorStoreRecordKeyProperty)
             {
-                if (storageModel.TryGetPropertyValue(storagePropertyName, out var keyValue))
+                key = storageModel.Key;
+            }
+            else if (property is VectorStoreRecordDataProperty dataProperty && storageModel.Data != null)
+            {
+                if (storageModel.Data.TryGetValue(dataProperty.DataModelPropertyName, out var dataValue))
                 {
-                    key = keyValue?.GetValue<string>();
+                    dataProperties[dataProperty.DataModelPropertyName] =
+                        JsonSerializer.Deserialize(dataValue!.ToString()!, dataProperty.PropertyType, this._jsonSerializerOptions);
                 }
             }
-            else if (property is VectorStoreRecordDataProperty dataProperty)
+            else if (property is VectorStoreRecordVectorProperty vectorProperty && options.IncludeVectors && storageModel.Vectors != null)
             {
-                if (storageModel.TryGetPropertyValue(storagePropertyName, out var dataValue))
+                if (storageModel.Vectors.TryGetValue(vectorProperty.DataModelPropertyName, out var vectorValue))
                 {
-                    dataProperties.Add(property.DataModelPropertyName, dataValue.Deserialize(dataProperty.PropertyType, this._jsonSerializerOptions));
-                }
-            }
-            else if (property is VectorStoreRecordVectorProperty vectorProperty && options.IncludeVectors)
-            {
-                if (storageModel.TryGetPropertyValue(storagePropertyName, out var vectorValue))
-                {
-                    vectorProperties.Add(property.DataModelPropertyName, vectorValue.Deserialize(vectorProperty.PropertyType));
+                    vectorProperties[vectorProperty.DataModelPropertyName] =
+                        JsonSerializer.Deserialize(vectorValue!.ToString()!, vectorProperty.PropertyType, this._jsonSerializerOptions);
                 }
             }
         }

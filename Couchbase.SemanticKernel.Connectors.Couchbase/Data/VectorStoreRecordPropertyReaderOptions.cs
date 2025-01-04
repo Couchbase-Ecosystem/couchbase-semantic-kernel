@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Connectors.Memory.Couchbase.Data;
+namespace Couchbase.SemanticKernel.Connectors.Couchbase.Data;
 
 /// <summary>
 /// Contains options for <see cref="VectorStoreRecordPropertyReader"/>.

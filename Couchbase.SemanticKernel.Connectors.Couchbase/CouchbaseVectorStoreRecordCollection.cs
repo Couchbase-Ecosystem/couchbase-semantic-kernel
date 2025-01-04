@@ -1,13 +1,12 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using Connectors.Memory.Couchbase;
-using Connectors.Memory.Couchbase.Data;
 using Couchbase.Core.Exceptions.KeyValue;
 using Couchbase.KeyValue;
 using Couchbase.Management.Collections;
 using Couchbase.Search;
 using Couchbase.Search.Queries.Vector;
+using Couchbase.SemanticKernel.Connectors.Couchbase.Data;
+using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
 using Microsoft.Extensions.VectorData;
 using VectorSearchOptions = Microsoft.Extensions.VectorData.VectorSearchOptions;
 
@@ -28,54 +27,33 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
         typeof(string)
     };
 
-    /// <summary>A <see cref="HashSet{T}"/> of types that data properties on the provided model may have.</summary>
-    private static readonly HashSet<Type> s_supportedDataTypes = new()
-    {
-        typeof(bool),
-        typeof(bool?),
-        typeof(string),
-        typeof(int),
-        typeof(int?),
-        typeof(long),
-        typeof(long?),
-        typeof(float),
-        typeof(float?),
-        typeof(double),
-        typeof(double?),
-        typeof(DateTimeOffset),
-        typeof(DateTimeOffset?),
-    };
-
-    /// <summary>A <see cref="HashSet{T}"/> of types that vector properties on the provided model may have.</summary>
-//     private static readonly HashSet<Type> s_supportedVectorTypes = new()
-//     {
-// #if NET5_0_OR_GREATER
-//         typeof(ReadOnlyMemory<Half>),
-//         typeof(ReadOnlyMemory<Half>?),
-// #endif
-//         typeof(ReadOnlyMemory<float>),
-//         typeof(ReadOnlyMemory<float>?),
-//         typeof(ReadOnlyMemory<double>),
-//         typeof(ReadOnlyMemory<double>?),
-//         typeof(ReadOnlyMemory<byte>),
-//         typeof(ReadOnlyMemory<byte>?),
-//         typeof(ReadOnlyMemory<sbyte>),
-//         typeof(ReadOnlyMemory<sbyte>?),
-//     };
-
     /// <summary>The default options for vector search.</summary>
     private static readonly VectorSearchOptions s_defaultVectorSearchOptions = new();
 
+    /// <summary>The Couchbase scope to use for storing and retrieving records.</summary>
     private readonly IScope _scope;
+    
+    /// <summary>The Couchbase collection to use for storing and retrieving records.</summary>
     private readonly ICouchbaseCollection _collection;
+    
+    /// <summary>The name of the collection.</summary>
     private readonly string _collectionName;
+    
+    /// <summary>Optional configuration options for this class.</summary>
     private readonly CouchbaseVectorStoreRecordCollectionOptions<TRecord> _options;
+    
+    /// <summary>A helper to access property information for the current data model and record definition.</summary>
     private readonly VectorStoreRecordPropertyReader _propertyReader;
+    
+    /// <summary>A dictionary that maps from a property name to the storage name that should be used when serializing it to json for data and vector properties.</summary>
     private readonly Dictionary<string, string> _storagePropertyNames = new();
-    private readonly IVectorStoreRecordMapper<TRecord, JsonObject> _mapper;
+    
+    /// <summary>The mapper to use when converting between the data model and the Couchbase record.</summary>
+    private readonly IVectorStoreRecordMapper<TRecord, TRecord> _mapper;
 
     /// <inheritdoc />
     public string CollectionName { get; }
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="CouchbaseVectorStoreRecordCollection{TRecord}"/> class.
     /// </summary>
@@ -88,18 +66,18 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
         CouchbaseVectorStoreRecordCollectionOptions<TRecord>? options = null)
     {
         // Verify parameters
-        // Verify.NotNull(scope);
-        // Verify.NotNullOrWhiteSpace(collectionName);
+        Verify.NotNull(scope);
+        Verify.NotNullOrWhiteSpace(collectionName);
 
-        this._scope = scope;
-        this.CollectionName = collectionName;
-        this._collection = scope.Collection(collectionName);
-        this._options = options ?? new CouchbaseVectorStoreRecordCollectionOptions<TRecord>();
+        _scope = scope;
+        CollectionName = collectionName;
+        _collection = scope.Collection(collectionName);
+        _options = options ?? new CouchbaseVectorStoreRecordCollectionOptions<TRecord>();
 
         // Initialize property reader
-        this._propertyReader = new VectorStoreRecordPropertyReader(
+        _propertyReader = new VectorStoreRecordPropertyReader(
             typeof(TRecord),
-            this._options.VectorStoreRecordDefinition,
+            _options.VectorStoreRecordDefinition,
             new VectorStoreRecordPropertyReaderOptions
             {
                 RequiresAtLeastOneVector = false,
@@ -110,326 +88,17 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
 
         // Validate property types
         this._propertyReader.VerifyKeyProperties(s_supportedKeyTypes);
-        this._propertyReader.VerifyDataProperties(s_supportedDataTypes, supportEnumerable: true);
-        // this._propertyReader.VerifyVectorProperties(s_supportedVectorTypes);
 
         // Map storage property names
-        foreach (var property in this._propertyReader.Properties)
+        foreach (var property in _propertyReader.Properties)
         {
-            this._storagePropertyNames[property.DataModelPropertyName] = property.DataModelPropertyName;
+            _storagePropertyNames[property.DataModelPropertyName] = property.DataModelPropertyName;
         }
 
         // Initialize mapper
-        this._mapper = this.InitializeMapper(this._options.JsonSerializerOptions ?? JsonSerializerOptions.Default);
+        _mapper = this.InitializeMapper(this._options.JsonSerializerOptions ?? JsonSerializerOptions.Default);
     }
 
-    public async Task<VectorSearchResults<TRecord>> VectorizedSearchAsync<TVector>(
-    TVector vector,
-    VectorSearchOptions? options = null,
-    CancellationToken cancellationToken = default)
-    {
-        // Constants for operation and score
-        const string OperationName = "VectorizedSearch";
-        const string ScorePropertyName = "similarityScore"; // Field for similarity score
-    
-        // Validate the input vector
-        float[] floatVector = vector switch
-        {
-            float[] v => v,
-            ReadOnlyMemory<float> v => v.ToArray(),
-            IEnumerable<float> v => v.ToArray(),
-            _ => throw new NotSupportedException(
-                $"The provided vector type {vector.GetType().FullName} is not supported by the Couchbase connector. " +
-                $"Supported types: float[], ReadOnlyMemory<float>, IEnumerable<float>.")
-        };
-    
-        // Retrieve collection-level options and combine with method-level options
-        var searchOptions = options ?? s_defaultVectorSearchOptions;
-    
-        // Retrieve the vector property for the search
-        var vectorProperty = this.GetVectorPropertyForSearch(searchOptions.VectorPropertyName);
-        if (vectorProperty is null)
-        {
-            throw new InvalidOperationException(
-                "The collection does not have any vector properties, so vector search is not possible.");
-        }
-    
-        // Map the vector field name to the storage property
-        var vectorFieldName = this._storagePropertyNames[vectorProperty.DataModelPropertyName];
-    
-        // Build the primary vector query
-        var vectorQuery = VectorQuery.Create(
-            vectorFieldName,
-            floatVector,
-            new VectorQueryOptions
-            {
-                // Todo: consider using a helper function called GetNumCandidates
-                NumCandidates = (uint?)this._options.NumCandidates ?? (uint)searchOptions.Top * 10, 
-                Boost = this._options.Boost
-            });
-        
-        // Construct the final search request
-        var searchRequest = new SearchRequest(
-            SearchQuery: this._options.FtsQuery,
-            VectorSearch: VectorSearch.Create(vectorQuery)
-        );
-    
-        // Execute the search query using Couchbase SDK
-        var searchResult = await this._scope.SearchAsync(
-            this._options.IndexName ?? throw new InvalidOperationException("Index name is required."),
-            searchRequest,
-            new SearchOptions()
-                // .Limit(searchOptions.Top)                
-                // .Skip(searchOptions.Skip)               
-                // .ScanConsistency(SearchScanConsistency.RequestPlus)
-                // .CancellationToken(cancellationToken)
-        ).ConfigureAwait(false);
-        
-        // Map the search results to the target data model (TRecord)
-        var mappedResults = this.MapSearchResultsAsync(
-            searchResult,
-            ScorePropertyName,
-            OperationName,
-            searchOptions,
-            cancellationToken);
-    
-        // Return the results wrapped in a VectorSearchResults object
-        return new VectorSearchResults<TRecord>(mappedResults);
-    }
-    
-//    public async Task<VectorSearchResults<TRecord>> VectorizedSearchAsync<TVector>(
-//     TVector vector,
-//     VectorSearchOptions? options = null,
-//     CancellationToken cancellationToken = default)
-// {
-//     // Constants for operation and score
-//     const string OperationName = "VectorizedSearch";
-//     const string ScorePropertyName = "similarityScore";
-//
-//     // Validate the input vector
-//     if (vector is not float[] floatVector)
-//     {
-//         throw new NotSupportedException(
-//             $"The provided vector type {vector.GetType().FullName} is not supported by the Couchbase connector. " +
-//             $"Supported type: float[].");
-//     }
-//
-//     // Retrieve collection-level options and combine with method-level options
-//     var searchOptions = options ?? s_defaultVectorSearchOptions;
-//
-//     // Retrieve the vector property for the search
-//     var vectorProperty = this.GetVectorPropertyForSearch(searchOptions.VectorPropertyName);
-//     if (vectorProperty is null)
-//     {
-//         throw new InvalidOperationException(
-//             "The collection does not have any vector properties, so vector search is not possible.");
-//     }
-//
-//     // Map the vector field name to the storage property
-//     var vectorFieldName = this._storagePropertyNames[vectorProperty.DataModelPropertyName];
-//
-//     // Build the primary vector query
-//     var vectorQuery = VectorQuery.Create(
-//         vectorFieldName,
-//         floatVector,
-//         new VectorQueryOptions
-//         {
-//             NumCandidates = (uint?)this._options.NumCandidates ?? (uint)searchOptions.Top * 10,
-//             Boost = this._options.Boost
-//         });
-//
-//     // Build the filter query if provided
-//     var filterQuery = BuildFilter(searchOptions.Filter, this._storagePropertyNames);
-//
-//     // Combine vector query and filter query
-//     ISearchQuery combinedQuery = filterQuery is not null
-//         ? new BooleanQuery().Must(vectorQuery).Must(filterQuery)
-//         : vectorQuery;
-//
-//     // Construct the final search request
-//     var searchRequest = new SearchRequest(combinedQuery);
-//
-//     // Execute the search query using Couchbase SDK
-//     var searchResult = await this._scope.SearchAsync(
-//         this._options.IndexName ?? throw new InvalidOperationException("Index name is required."),
-//         searchRequest,
-//         new SearchOptions()
-//             .Limit(searchOptions.Top)
-//             .Skip(searchOptions.Skip)
-//             .ScanConsistency(SearchScanConsistency.RequestPlus)
-//             .CancellationToken(cancellationToken)
-//     ).ConfigureAwait(false);
-//
-//     // Map the search results to the target data model (TRecord)
-//     var mappedResults = this.MapSearchResultsAsync(
-//         searchResult,
-//         ScorePropertyName,
-//         OperationName,
-//         searchOptions,
-//         cancellationToken);
-//
-//     // Return the results wrapped in a VectorSearchResults object
-//     return new VectorSearchResults<TRecord>(mappedResults);
-// }
-//
-//    private ISearchQuery? BuildFilter(VectorSearchFilter? filter, Dictionary<string, string> propertyMappings)
-//    {
-//        if (filter?.FilterClauses is null)
-//        {
-//            return null;
-//        }
-//
-//        var mustQueries = new List<ISearchQuery>();
-//        var shouldQueries = new List<ISearchQuery>();
-//
-//        foreach (var clause in filter.FilterClauses)
-//        {
-//            switch (clause)
-//            {
-//                case EqualToFilterClause equalToClause:
-//                    if (propertyMappings.TryGetValue(equalToClause.FieldName, out var mappedField))
-//                    {
-//                        var query = CreateQueryForType(mappedField, equalToClause.Value);
-//                        mustQueries.Add(query);
-//                    }
-//                    else
-//                    {
-//                        throw new InvalidOperationException($"Invalid filter field: {equalToClause.FieldName}");
-//                    }
-//                    break;
-//
-//                case AnyTagEqualToFilterClause anyTagClause:
-//                    if (propertyMappings.TryGetValue(anyTagClause.FieldName, out var tagField))
-//                    {
-//                        foreach (var value in anyTagClause.Value)
-//                        {
-//                            var query = CreateQueryForType(tagField, value);
-//                            shouldQueries.Add(query);
-//                        }
-//                    }
-//                    else
-//                    {
-//                        throw new InvalidOperationException($"Invalid filter field: {anyTagClause.FieldName}");
-//                    }
-//                    break;
-//
-//                default:
-//                    throw new NotSupportedException($"Unsupported filter type: {clause.GetType().Name}");
-//            }
-//        }
-//
-//        var booleanQuery = new BooleanQuery();
-//
-//        if (mustQueries.Any())
-//        {
-//            booleanQuery.Must(new ConjunctionQuery(mustQueries.ToArray()));
-//        }
-//
-//        if (shouldQueries.Any())
-//        {
-//            booleanQuery.Should(new DisjunctionQuery(shouldQueries.ToArray()));
-//        }
-//
-//        return booleanQuery;
-//    }
-//    
-//    private ISearchQuery CreateQueryForType(string field, object value)
-//    {
-//        return value switch
-//        {
-//            string stringValue => new TermQuery(stringValue).Field(field),
-//            int intValue => new NumericRangeQuery()
-//                .Field(field)
-//                .Min(intValue)
-//                .Max(intValue),
-//            float floatValue => new NumericRangeQuery()
-//                .Field(field)
-//                .Min(floatValue)
-//                .Max(floatValue),
-//            bool boolValue => new BooleanFieldQuery(boolValue).Field(field),
-//            _ => throw new NotSupportedException($"Unsupported data type: {value.GetType().Name}")
-//        };
-//    }
-
-
-
-private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsync(
-    ISearchResult searchResult,
-    string scorePropertyName,
-    string operationName,
-    VectorSearchOptions searchOptions,
-    [EnumeratorCancellation] CancellationToken cancellationToken)
-{
-    foreach (var hit in searchResult.Hits)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // Extract similarity score from the hit
-        var score = hit.Score;
-
-        // Convert the hit fields to JSON
-        var rawJson = JsonSerializer.Serialize(hit.Fields);
-        var jsonObject = JsonSerializer.Deserialize<JsonObject>(rawJson);
-
-        if (jsonObject is null)
-        {
-            throw new InvalidOperationException("Failed to deserialize search hit fields into JSON.");
-        }
-
-        // Remove the score from the result object (optional, if not required downstream)
-        jsonObject.Remove(scorePropertyName);
-
-        // Map JSON object to the data model (TRecord)
-        var record = VectorStoreErrorHandler.RunModelConversion(
-            DatabaseName,
-            this.CollectionName,
-            operationName,
-            () => this._mapper.MapFromStorageToDataModel(jsonObject, new() { IncludeVectors = searchOptions.IncludeVectors }));
-
-        yield return new VectorSearchResult<TRecord>(record, score);
-    }
-}
-
-
-   private VectorStoreRecordVectorProperty? GetVectorPropertyForSearch(string? vectorFieldName)
-   {
-       // If vector property name is provided in options, try to find it in schema or throw an exception.
-       if (!string.IsNullOrWhiteSpace(vectorFieldName))
-       {
-           // Check vector properties by data model property name.
-           var vectorProperty = this._propertyReader.VectorProperties
-               .FirstOrDefault(l => l.DataModelPropertyName.Equals(vectorFieldName, StringComparison.Ordinal));
-
-           if (vectorProperty is not null)
-           {
-               return vectorProperty;
-           }
-
-           throw new InvalidOperationException($"The {typeof(TRecord).FullName} type does not have a vector property named '{vectorFieldName}'.");
-       }
-
-       // If vector property is not provided in options, return first vector property from schema.
-       return this._propertyReader.VectorProperty;
-   }
-
-
-   // public async Task<bool> CollectionExistsAsync(CancellationToken cancellationToken = default)
-    // {
-    //     // Get all scopes from the bucket
-    //     var scopes = await _scope.Bucket.Collections.GetAllScopesAsync(new GetAllScopesOptions().CancellationToken(cancellationToken)).ConfigureAwait(false);
-    //
-    //     // Find the current scope and check if the collection exists
-    //     foreach (var scope in scopes)
-    //     {
-    //         if (scope.Name == _scope.Name)
-    //         {
-    //             return scope.Collections.Any(collection => collection.Name == this.CollectionName);
-    //         }
-    //     }
-    //
-    //     return false;
-    // }
-    
     /// <inheritdoc />
     public async Task<bool> CollectionExistsAsync(CancellationToken cancellationToken = default)
     {
@@ -456,7 +125,7 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }).ConfigureAwait(false);
     }
 
-    // Todo: check if we really need to check collection already exists or we can directly create it
+    /// <inheritdoc />
     public async Task CreateCollectionAsync(CancellationToken cancellationToken = default)
     {
         // Run the operation to create the collection
@@ -485,12 +154,11 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
             // Create the collection in the specified scope
             var collectionSpec = new CollectionSpec(_scope.Name, this.CollectionName);
             await collectionManager
-                .CreateCollectionAsync(collectionSpec, null) // Pass null for CreateCollectionOptions
+                .CreateCollectionAsync(collectionSpec, null)
                 .ConfigureAwait(false);
         });
     }
     
-    // Todo: should you put inside RunOperationAsync?
     /// <inheritdoc />
     public async Task CreateCollectionIfNotExistsAsync(CancellationToken cancellationToken = default)
     {
@@ -502,6 +170,7 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }
     }
     
+    /// <inheritdoc />
     public async Task DeleteCollectionAsync(CancellationToken cancellationToken = default)
     {
         await this.RunOperationAsync("DeleteCollection", async () =>
@@ -515,12 +184,11 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         });
     }
 
-    // Todo: Not working, need to debug
     /// <inheritdoc />
     public async Task<TRecord?> GetAsync(string key, GetRecordOptions? options = null, CancellationToken cancellationToken = default)
     {
         // Validate the key
-        // Verify.NotNullOrWhiteSpace(key);
+        Verify.NotNullOrWhiteSpace(key);
 
         const string OperationName = "Get";
 
@@ -534,15 +202,16 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
                 try
                 {
                     var getResult = await this._collection.GetAsync(key).ConfigureAwait(false);
-                    return getResult.ContentAs<JsonObject>(); // Ensure deserialization
+
+                    return getResult.ContentAs<TRecord>();
                 }
                 catch (DocumentNotFoundException)
                 {
                     Console.WriteLine($"Document with key '{key}' not found.");
-                    return null;
+                    return default;
                 }
             }).ConfigureAwait(false);
-            
+
             if (result is null)
             {
                 return default;
@@ -563,50 +232,41 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }
     }
     
+    /// <inheritdoc />
     public async IAsyncEnumerable<TRecord> GetBatchAsync(
         IEnumerable<string> keys,
         GetRecordOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Verify.NotNull(keys);
-
         const string OperationName = "GetBatch";
 
         foreach (var key in keys)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var result = await this.RunOperationAsync(OperationName, async () =>
             {
                 try
                 {
-                    var getResult = await this._collection.GetAsync(
-                        key,
-                        options: null // Customize GetOptions if needed
-                    ).ConfigureAwait(false);
+                    var getResult = await this._collection.GetAsync(key).ConfigureAwait(false);
 
-                    return getResult;
+                    return getResult.ContentAs<TRecord>();
                 }
                 catch (DocumentNotFoundException)
                 {
                     // Ignore missing documents in a batch context
-                    return null;
+                    return default;
                 }
             }).ConfigureAwait(false);
 
             if (result is not null)
             {
-                var jsonObject = result.ContentAs<JsonObject>();
-                if (jsonObject is null)
-                {
-                    // Log or throw a specific error for debugging
-                    throw new InvalidOperationException($"Failed to retrieve content for key: {key}");
-                }
-
-                // Map the JSON object to the data model
+                // Map the retrieved record to the data model
                 var record = VectorStoreErrorHandler.RunModelConversion(
                     DatabaseName,
                     this.CollectionName,
                     OperationName,
-                    () => this._mapper.MapFromStorageToDataModel(jsonObject, new() { IncludeVectors = options?.IncludeVectors ?? false })
+                    () => this._mapper.MapFromStorageToDataModel(result, new() { IncludeVectors = options?.IncludeVectors ?? false })
                 );
 
                 if (record is null)
@@ -619,7 +279,7 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }
     }
 
-
+    /// <inheritdoc />
     public async Task DeleteAsync(string key, DeleteRecordOptions? options = null, CancellationToken cancellationToken = default)
     {
         await RunOperationAsync("Delete", async () =>
@@ -631,7 +291,7 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         });
     }
 
-    // Todo: should you add RunOperationAsync?
+    /// <inheritdoc />
     public async Task DeleteBatchAsync(IEnumerable<string> keys, DeleteRecordOptions? options = null, CancellationToken cancellationToken = default)
     {
         foreach (var key in keys)
@@ -640,42 +300,48 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }
     }
 
-    // Todo: verify the this._propertyReader.KeyPropertyName, will the key always be the first element, what if this changes
+    /// <inheritdoc />
     public async Task<string> UpsertAsync(
         TRecord record,
         UpsertRecordOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        // Verify.NotNull(record);
+        Verify.NotNull(record);
 
         const string OperationName = "Upsert";
 
         // Convert the data model to the storage model
-        var jsonObject = VectorStoreErrorHandler.RunModelConversion(
+        var storageModel = VectorStoreErrorHandler.RunModelConversion(
             DatabaseName,
             this.CollectionName,
             OperationName,
             () => this._mapper.MapFromDataToStorageModel(record));
 
-        // Retrieve the key value from the JSON object
-        if (!jsonObject.TryGetPropertyValue(this._propertyReader.KeyPropertyName, out var keyValue) || string.IsNullOrWhiteSpace(keyValue?.ToString()))
+        // Retrieve the key value from the storage model
+        var keyPropertyName = this._propertyReader.KeyPropertyName;
+
+        // Use reflection or a direct property lookup
+        var keyProperty = typeof(TRecord).GetProperty(keyPropertyName);
+
+        if (keyProperty == null)
         {
-            throw new VectorStoreOperationException($"Key property {this._propertyReader.KeyPropertyName} is not initialized.");
+            throw new VectorStoreOperationException($"Key property {keyPropertyName} not found.");
         }
 
-        var key = keyValue.ToString()!;
+        var keyValue = keyProperty.GetValue(record)?.ToString();
+
+        if (string.IsNullOrWhiteSpace(keyValue))
+        {
+            throw new VectorStoreOperationException($"Key property {keyPropertyName} is not initialized.");
+        }
 
         // Perform the upsert operation
         await this.RunOperationAsync(OperationName, async () =>
         {
-            await this._collection.UpsertAsync(
-                key,
-                jsonObject,
-                options: null // Add specific UpsertOptions if required
-            ).ConfigureAwait(false);
+            await this._collection.UpsertAsync(keyValue, storageModel).ConfigureAwait(false);
         }).ConfigureAwait(false);
 
-        return key;
+        return keyValue;
     }
 
     /// <inheritdoc />
@@ -685,7 +351,7 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Verify the records are not null
-        // Verify.NotNull(records);
+        Verify.NotNull(records);
 
         // Process each record individually
         foreach (var record in records)
@@ -700,9 +366,148 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
             }
         }
     }
-
     
-    private async Task RunOperationAsync(string operationName, Func<Task> operation)
+    public async Task<VectorSearchResults<TRecord>> VectorizedSearchAsync<TVector>(
+    TVector vector,
+    VectorSearchOptions? options = null,
+    CancellationToken cancellationToken = default)
+    {
+        // Constants for operation and score
+        const string OperationName = "VectorizedSearch";
+        const string ScorePropertyName = "similarityScore";
+    
+        // Validate the input vector
+        float[] floatVector = vector switch
+        {
+            float[] v => v,
+            ReadOnlyMemory<float> v => v.ToArray(),
+            IEnumerable<float> v => v.ToArray(),
+            _ => throw new NotSupportedException(
+                $"The provided vector type {vector.GetType().FullName} is not supported by the Couchbase connector. " +
+                $"Supported types: float[], ReadOnlyMemory<float>, IEnumerable<float>.")
+        };
+    
+        // Retrieve collection-level options and combine with method-level options
+        var searchOptions = options ?? s_defaultVectorSearchOptions;
+    
+        // Retrieve the vector property for the search
+        var vectorProperty = this.GetVectorPropertyForSearch(searchOptions.VectorPropertyName);
+        if (vectorProperty is null)
+        {
+            throw new InvalidOperationException(
+                "The collection does not have any vector properties, so vector search is not possible.");
+        }
+    
+        // Map the vector field name to the storage property
+        var vectorFieldName = ToCamelCase(this._storagePropertyNames[vectorProperty.DataModelPropertyName]);
+    
+        // Build the primary vector query
+        var vectorQuery = VectorQuery.Create(
+            vectorFieldName,
+            floatVector,
+            new VectorQueryOptions
+            {
+                NumCandidates = (uint?)_options.NumCandidates, 
+                Boost = _options.Boost
+            });
+        
+        var filterQuery = CouchbaseVectorStoreCollectionSearchMapping.BuildFilter(searchOptions.Filter, this._storagePropertyNames);
+        
+        // Construct the final search request
+        var searchRequest = new SearchRequest(
+            SearchQuery: filterQuery,
+            VectorSearch: VectorSearch.Create(vectorQuery)
+        );
+
+        var searchResult = await this._scope.SearchAsync(
+            this._options.IndexName ?? throw new InvalidOperationException("Index name is required."),
+            searchRequest,
+            new SearchOptions()
+                .Limit(searchOptions.Top)
+                .Skip(searchOptions.Skip)             
+        ).ConfigureAwait(false);
+        
+        // Map the search results to the target data model (TRecord)
+        var mappedResults = this.MapSearchResultsAsync(
+            searchResult,
+            ScorePropertyName,
+            OperationName,
+            searchOptions,
+            cancellationToken);
+    
+        // Return the results wrapped in a VectorSearchResults object
+        return await Task.FromResult(new VectorSearchResults<TRecord>(mappedResults));
+    }
+
+    private static string ToCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
+        {
+            return input; // Already camel case or invalid input
+        }
+
+        return char.ToLowerInvariant(input[0]) + input.Substring(1);
+    }
+
+    private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsync(
+       ISearchResult searchResult,
+       string scorePropertyName,
+       string operationName,
+       VectorSearchOptions searchOptions,
+       [EnumeratorCancellation] CancellationToken cancellationToken)
+   {
+       if (searchResult is null)
+       {
+           throw new ArgumentNullException(nameof(searchResult), "Search result cannot be null.");
+       }
+
+       foreach (var hit in searchResult.Hits)
+       {
+           var docId = hit.Id;
+           var score = hit.Score;
+
+           // Fetch the full document from KV by the doc ID
+           var getResult = await this._collection.GetAsync(docId).ConfigureAwait(false);
+           var docFromDb = getResult.ContentAs<TRecord>();
+
+           // Optionally run your mapper (if you have a custom mapping layer)
+           var record = VectorStoreErrorHandler.RunModelConversion(
+               DatabaseName,
+               this.CollectionName,
+               operationName,
+               () => this._mapper.MapFromStorageToDataModel(
+                   docFromDb,
+                   new StorageToDataModelMapperOptions
+                   {
+                       IncludeVectors = searchOptions.IncludeVectors
+                   }));
+
+           yield return new VectorSearchResult<TRecord>(record, score);
+       }
+   }
+
+   private VectorStoreRecordVectorProperty? GetVectorPropertyForSearch(string? vectorFieldName)
+   {
+       // If vector property name is provided in options, try to find it in schema or throw an exception.
+       if (!string.IsNullOrWhiteSpace(vectorFieldName))
+       {
+           // Check vector properties by data model property name.
+           var vectorProperty = this._propertyReader.VectorProperties
+               .FirstOrDefault(l => l.DataModelPropertyName.Equals(vectorFieldName, StringComparison.Ordinal));
+
+           if (vectorProperty is not null)
+           {
+               return vectorProperty;
+           }
+
+           throw new InvalidOperationException($"The {typeof(TRecord).FullName} type does not have a vector property named '{vectorFieldName}'.");
+       }
+
+       // If vector property is not provided in options, return first vector property from schema.
+       return this._propertyReader.VectorProperty;
+   }
+
+   private async Task RunOperationAsync(string operationName, Func<Task> operation)
     {
         try
         {
@@ -736,22 +541,31 @@ private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsyn
         }
     }
     
-    //Todo: Check if initialize mapper match the standards comparing with others
-    private IVectorStoreRecordMapper<TRecord, JsonObject> InitializeMapper(JsonSerializerOptions jsonSerializerOptions)
+    /// <summary>
+    /// Returns custom mapper, generic data model mapper or default record mapper.
+    /// </summary>
+    private IVectorStoreRecordMapper<TRecord, TRecord> InitializeMapper(JsonSerializerOptions jsonSerializerOptions)
     {
+        // Use custom mapper if provided
         if (this._options.JsonDocumentCustomMapper is not null)
         {
             return this._options.JsonDocumentCustomMapper;
         }
 
+        // Check if the type is a generic data model
         if (typeof(TRecord) == typeof(VectorStoreGenericDataModel<string>))
         {
-            var mapper = new CouchbaseGenericDataModelMapper(this._propertyReader.Properties, this._storagePropertyNames, jsonSerializerOptions);
-            return (mapper as IVectorStoreRecordMapper<TRecord, JsonObject>)!;
+            var mapper = new CouchbaseGenericDataModelMapper(
+                this._propertyReader.Properties,
+                this._storagePropertyNames,
+                jsonSerializerOptions);
+
+            // Return the mapper cast to the expected type
+            return (mapper as IVectorStoreRecordMapper<TRecord, TRecord>)!;
         }
 
-        return new CouchbaseVectorStoreRecordMapper<TRecord>(
-            this._storagePropertyNames,
-            jsonSerializerOptions);
+        // Fallback to default mapper with correct type parameter
+        return new CouchbaseVectorStoreRecordMapper<TRecord>(jsonSerializerOptions);
     }
+
 }

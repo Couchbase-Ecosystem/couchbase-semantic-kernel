@@ -1,50 +1,39 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using Connectors.Memory.Couchbase.Diagnostics;
+using Couchbase.KeyValue;
 using Microsoft.Extensions.VectorData;
 
 namespace Couchbase.SemanticKernel.Connectors.Couchbase;
 
 /// <summary>
-/// Class for mapping between a JSON object stored in Couchbase and the consumer data model.
+/// Class for mapping between a model object and a JSON document stored in Couchbase.
 /// </summary>
 /// <typeparam name="TRecord">The consumer data model to map to or from.</typeparam>
 [ExcludeFromCodeCoverage]
-public sealed class CouchbaseVectorStoreRecordMapper<TRecord> : IVectorStoreRecordMapper<TRecord, JsonObject>
+public sealed class CouchbaseVectorStoreRecordMapper<TRecord> : IVectorStoreRecordMapper<TRecord, TRecord>
 {
     /// <summary>The JSON serializer options to use when converting between the data model and the Couchbase record.</summary>
     private readonly JsonSerializerOptions _jsonSerializerOptions;
-    
-    /// <summary>A dictionary that maps from a property name to the storage name that should be used when serializing it to JSON for data and vector properties.</summary>
-    private readonly Dictionary<string, string> _storagePropertyNames;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CouchbaseVectorStoreRecordMapper{TRecord}"/> class.
     /// </summary>
-    /// <param name="keyStoragePropertyName">The storage property name of the key field.</param>
-    /// <param name="storagePropertyNames">A dictionary mapping property names to storage property names.</param>
     /// <param name="jsonSerializerOptions">The JSON serializer options to use for serialization and deserialization.</param>
-    public CouchbaseVectorStoreRecordMapper(
-        Dictionary<string, string> storagePropertyNames,
-        JsonSerializerOptions jsonSerializerOptions)
+    public CouchbaseVectorStoreRecordMapper(JsonSerializerOptions jsonSerializerOptions)
     {
-        Verify.NotNull(jsonSerializerOptions);
-        
-        this._storagePropertyNames = storagePropertyNames;
         this._jsonSerializerOptions = jsonSerializerOptions;
     }
 
     /// <inheritdoc />
-    public JsonObject MapFromDataToStorageModel(TRecord dataModel)
+    public TRecord MapFromDataToStorageModel(TRecord dataModel)
     {
-        var jsonObject = JsonSerializer.SerializeToNode(dataModel, this._jsonSerializerOptions)!.AsObject();
-        return jsonObject;
+        return dataModel;
     }
 
     /// <inheritdoc />
-    public TRecord MapFromStorageToDataModel(JsonObject storageModel, StorageToDataModelMapperOptions options)
+    public TRecord MapFromStorageToDataModel(TRecord storageModel, StorageToDataModelMapperOptions options)
     {
-        return storageModel.Deserialize<TRecord>(this._jsonSerializerOptions)!;
+        // TODO: if options contain includeVector as false, remove the vector from the storage model.
+        return storageModel;
     }
 }

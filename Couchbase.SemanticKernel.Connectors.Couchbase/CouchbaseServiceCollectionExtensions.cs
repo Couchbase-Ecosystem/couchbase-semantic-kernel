@@ -1,4 +1,3 @@
-using Connectors.Memory.Couchbase;
 using Couchbase.KeyValue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
@@ -148,7 +147,7 @@ public static class CouchbaseServiceCollectionExtensions
                 {
                     ConnectionString = connectionString,
                     UserName = username,
-                    Password = password
+                    Password = password,
                 };
 
                 var cluster = Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();

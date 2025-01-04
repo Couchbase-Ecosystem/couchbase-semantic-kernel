@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.VectorData;
 
-namespace Connectors.Memory.Couchbase.Data;
+namespace Couchbase.SemanticKernel.Connectors.Couchbase.Data;
 
 /// <summary>
 /// Contains helpers for verifying the types of vector store record properties.

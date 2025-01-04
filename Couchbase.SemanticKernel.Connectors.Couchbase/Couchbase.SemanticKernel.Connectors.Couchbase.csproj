@@ -9,7 +9,6 @@
     <ItemGroup>
       <Folder Include="Functions\" />
       <Folder Include="Http\" />
-      <Folder Include="Linq\" />
       <Folder Include="Schema\" />
       <Folder Include="System\" />
       <Folder Include="Text\" />
@@ -22,6 +21,7 @@
       <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.0.0-preview.1.24523.1" />
       <PackageReference Include="Microsoft.SemanticKernel" Version="1.29.0" />
       <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.29.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
 </Project>

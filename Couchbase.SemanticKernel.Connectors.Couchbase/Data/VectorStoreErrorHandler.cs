@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.VectorData;
 
-namespace Connectors.Memory.Couchbase.Data;
+namespace Couchbase.SemanticKernel.Connectors.Couchbase.Data;
 
 /// <summary>
 /// Contains helpers for reading vector store model properties and their attributes.
