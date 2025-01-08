@@ -63,6 +63,6 @@ public class CouchbaseHotelModel
     /// The vector representation of the description for vector search.
     /// </summary>
     [JsonPropertyName("description_embedding")]
-    [VectorStoreRecordVector(Dimensions: 4, DistanceFunction: DistanceFunction.CosineSimilarity, IndexKind: IndexKind.Flat)]
-    public ReadOnlyMemory<float>? DescriptionEmbedding { get; set; }
+    [VectorStoreRecordVector(Dimensions: 4, DistanceFunction: DistanceFunction.DotProductSimilarity)]
+    public float[] DescriptionEmbedding { get; set; }
 }

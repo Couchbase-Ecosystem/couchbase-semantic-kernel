@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using Couchbase.KeyValue;
 using Microsoft.Extensions.VectorData;
 
 namespace Couchbase.SemanticKernel.Connectors.Couchbase;
@@ -33,7 +32,18 @@ public sealed class CouchbaseVectorStoreRecordMapper<TRecord> : IVectorStoreReco
     /// <inheritdoc />
     public TRecord MapFromStorageToDataModel(TRecord storageModel, StorageToDataModelMapperOptions options)
     {
-        // TODO: if options contain includeVector as false, remove the vector from the storage model.
+        // If IncludeVectors is false, remove the vector property from the storage model
+        if (!options.IncludeVectors)
+        {
+            var vectorProperty = typeof(TRecord).GetProperties()
+                .FirstOrDefault(p => p.GetCustomAttributes(typeof(VectorStoreRecordVectorAttribute), inherit: true).Any());
+
+            if (vectorProperty != null && vectorProperty.CanWrite)
+            {
+                vectorProperty.SetValue(storageModel, null);
+            }
+        }
+
         return storageModel;
     }
 }
