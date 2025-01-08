@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Couchbase.SemanticKernel.Connectors.Couchbase\Couchbase.SemanticKernel.Connectors.Couchbase.csproj" />
+        <ProjectReference Include="..\Couchbase.SemanticKernel\Couchbase.SemanticKernel.csproj" />
     </ItemGroup>
 
 </Project>

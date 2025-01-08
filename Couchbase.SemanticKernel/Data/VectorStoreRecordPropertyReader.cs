@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.Data;
+namespace Couchbase.SemanticKernel.Data;
 
 /// <summary>
 /// Contains helpers for reading vector store model properties and their attributes.

@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
-using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Diagnostics;
 using Couchbase.KeyValue;
 using Couchbase.Management.Collections;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Class for accessing the list of collections in a Couchbase vector store.

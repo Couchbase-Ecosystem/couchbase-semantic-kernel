@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Class for mapping between a model object and a JSON document stored in Couchbase.

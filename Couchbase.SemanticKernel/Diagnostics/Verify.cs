@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.SemanticKernel;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
+namespace Couchbase.SemanticKernel.Diagnostics;
 
 internal static partial class Verify
 {

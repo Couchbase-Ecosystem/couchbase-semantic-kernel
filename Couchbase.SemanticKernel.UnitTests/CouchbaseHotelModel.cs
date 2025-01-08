@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests;
+namespace Couchbase.SemanticKernel.UnitTests;
 
 /// <summary>
 /// Represents a hotel model used in Couchbase vector search.

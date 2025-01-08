@@ -4,7 +4,7 @@ using Couchbase.Search.Queries.Range;
 using Couchbase.Search.Queries.Simple;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Contains mapping helpers to use when searching for documents using Couchbase.

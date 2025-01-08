@@ -1,7 +1,7 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.Connectors.Couchbase", "Couchbase.SemanticKernel.Connectors.Couchbase\Couchbase.SemanticKernel.Connectors.Couchbase.csproj", "{5D02D3E3-356F-4F12-B532-3FAD33A9836B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel", "Couchbase.SemanticKernel\Couchbase.SemanticKernel.csproj", "{5D02D3E3-356F-4F12-B532-3FAD33A9836B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests", "Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests\Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests.csproj", "{7BD1F3B0-031C-47A5-A532-F8D65890A754}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.UnitTests", "Couchbase.SemanticKernel.UnitTests\Couchbase.SemanticKernel.UnitTests.csproj", "{7BD1F3B0-031C-47A5-A532-F8D65890A754}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.SemanticKernel.Playground", "Couchbase.SemanticKernel.Playground\Couchbase.SemanticKernel.Playground.csproj", "{017364B1-3018-4D14-A799-26C164207A3F}"
 EndProject

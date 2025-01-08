@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Xunit;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests;
+namespace Couchbase.SemanticKernel.UnitTests;
 
 /// <summary>
 /// Unit tests for <see cref="CouchbaseVectorStoreRecordMapper{TRecord}"/> class.

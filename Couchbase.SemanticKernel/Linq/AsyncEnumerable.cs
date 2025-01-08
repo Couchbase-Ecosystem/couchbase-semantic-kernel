@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Diagnostics;
 
 using Microsoft.SemanticKernel;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.Linq;
+namespace Couchbase.SemanticKernel.Linq;
 
 [ExcludeFromCodeCoverage]
 internal static class AsyncEnumerable

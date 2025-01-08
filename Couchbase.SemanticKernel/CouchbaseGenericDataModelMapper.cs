@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Diagnostics;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// A mapper that maps between the generic Semantic Kernel data model and the model that the data is stored under, within Couchbase.

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Options when creating a <see cref="CouchbaseFtsVectorStore"/>.

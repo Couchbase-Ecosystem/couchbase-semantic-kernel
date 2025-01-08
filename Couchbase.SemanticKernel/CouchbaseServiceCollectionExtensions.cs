@@ -2,7 +2,7 @@ using Couchbase.KeyValue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Extensions methods to register Couchbase <see cref="IVectorStore"/> instances on an <see cref="IServiceCollection"/>.

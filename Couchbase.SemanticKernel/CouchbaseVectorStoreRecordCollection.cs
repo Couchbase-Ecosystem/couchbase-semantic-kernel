@@ -5,12 +5,12 @@ using Couchbase.KeyValue;
 using Couchbase.Management.Collections;
 using Couchbase.Search;
 using Couchbase.Search.Queries.Vector;
-using Couchbase.SemanticKernel.Connectors.Couchbase.Data;
-using Couchbase.SemanticKernel.Connectors.Couchbase.Diagnostics;
+using Couchbase.SemanticKernel.Data;
+using Couchbase.SemanticKernel.Diagnostics;
 using Microsoft.Extensions.VectorData;
 using VectorSearchOptions = Microsoft.Extensions.VectorData.VectorSearchOptions;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Service for storing and retrieving vector records, using Couchbase as the underlying storage.

@@ -3,7 +3,7 @@ using Couchbase.Management.Collections;
 using Microsoft.Extensions.VectorData;
 using Moq;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase.UnitTests;
+namespace Couchbase.SemanticKernel.UnitTests;
 
 /// <summary>
 /// Unit tests for <see cref="CouchbaseVectorStore"/> class.

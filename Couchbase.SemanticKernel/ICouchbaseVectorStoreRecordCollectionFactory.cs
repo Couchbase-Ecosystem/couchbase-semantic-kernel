@@ -1,7 +1,7 @@
 using Couchbase.KeyValue;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Interface for constructing <see cref="IVectorStoreRecordCollection{TKey,TRecord}"/> Couchbase instances when using <see cref="IVectorStore"/> to retrieve these.

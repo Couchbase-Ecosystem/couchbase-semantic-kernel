@@ -4,7 +4,7 @@ using Couchbase.Search;
 using Couchbase.Search.Queries.Vector;
 using Microsoft.Extensions.VectorData;
 
-namespace Couchbase.SemanticKernel.Connectors.Couchbase;
+namespace Couchbase.SemanticKernel;
 
 /// <summary>
 /// Options when creating a <see cref="CouchbaseVectorStoreRecordCollection{TRecord}"/>.
