@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using Couchbase.SemanticKernel.Connectors.Couchbase;
+using Couchbase.SemanticKernel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.VectorData;
@@ -22,6 +22,9 @@ internal sealed class Program
 
         var builder = Host.CreateApplicationBuilder(args);
         
+        // Add configuration from appsettings.json
+        var couchbaseConfig = builder.Configuration.GetSection("Couchbase");
+
         // Register AI services.
         var kernelBuilder = builder.Services.AddKernel();
         kernelBuilder.AddAzureOpenAIChatCompletion("gpt-4o", "https://my-service.openai.azure.com", "my_token");
@@ -32,15 +35,15 @@ internal sealed class Program
         
         // Register Couchbase Vector Store using provided extensions.
         builder.Services.AddCouchbaseVectorStoreRecordCollection<Hotel>(
-            connectionString: "<your-couchbase-connection-string>",
-            username: "<your-username>",
-            password: "<your-password>",
-            bucketName: "<your-bucket-name>",
-            scopeName: "<your-scope-name>",
-            collectionName: "<your-collection-name>",
+            connectionString: couchbaseConfig["ConnectionString"],
+            username: couchbaseConfig["Username"],
+            password: couchbaseConfig["Password"],
+            bucketName: couchbaseConfig["BucketName"],
+            scopeName: couchbaseConfig["ScopeName"],
+            collectionName: couchbaseConfig["CollectionName"],
             options: new CouchbaseVectorStoreRecordCollectionOptions<Hotel>
             {
-                IndexName = "<your-index-name>"
+                IndexName = couchbaseConfig["IndexName"]
             });
 
         // Build the host.
@@ -59,27 +62,38 @@ internal sealed class Program
         // Crate collection and ingest a few demo records.
         await vectorStoreCollection.CreateCollectionIfNotExistsAsync();
         
-        //CSV format: ID;Hotel Name;Description;Reference Link
-        var hotels = (await File.ReadAllLinesAsync("hotels.csv"))
-            .Select(x => x.Split(';'));
-        
-        foreach (var chunk in hotels.Chunk(25))
+        // Get the filepath of the hotels.csv file.
+        var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName 
+                          ?? throw new InvalidOperationException("Unable to determine the project root directory.");
+
+        var filePath = Path.Combine(projectRoot, "hotels.csv");
+
+        if (!File.Exists(filePath))
         {
-            var descriptionEmbeddings = await embeddings.GenerateEmbeddingsAsync(chunk.Select(x => x[2]).ToArray());
-            
-            for (var i = 0; i < chunk.Length; ++i)
-            {
-                var hotel = chunk[i];
-                await vectorStoreCollection.UpsertAsync(new Hotel
-                {
-                    HotelName = hotel[1],
-                    HotelId = hotel[0],
-                    Description = hotel[2],
-                    DescriptionEmbedding = descriptionEmbeddings[i].ToArray(),
-                    ReferenceLink = hotel[3]
-                });
-            }
+            throw new FileNotFoundException($"The file 'hotels.csv' was not found at the path: {filePath}");
         }
+        
+         //CSV format: ID;Hotel Name;Description;Reference Link
+         var hotels = (await File.ReadAllLinesAsync(filePath))
+             .Select(x => x.Split(';'));
+        
+         foreach (var chunk in hotels.Chunk(25))
+         {
+             var descriptionEmbeddings = await embeddings.GenerateEmbeddingsAsync(chunk.Select(x => x[2]).ToArray());
+             
+             for (var i = 0; i < chunk.Length; ++i)
+             {
+                 var hotel = chunk[i];
+                 await vectorStoreCollection.UpsertAsync(new Hotel
+                 {
+                     HotelName = hotel[1],
+                     HotelId = hotel[0],
+                     Description = hotel[2],
+                     DescriptionEmbedding = descriptionEmbeddings[i].ToArray(),
+                     ReferenceLink = hotel[3]
+                 });
+             }
+         }
         
         // Invoke the LLM with a template that uses the search plugin to
         // 1. get related information to the user query from the vector store

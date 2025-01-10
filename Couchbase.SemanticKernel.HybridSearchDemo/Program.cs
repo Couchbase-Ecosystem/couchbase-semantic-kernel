@@ -5,7 +5,7 @@ using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Embeddings;
-using Couchbase.SemanticKernel.Connectors.Couchbase;
+using Couchbase.SemanticKernel;
 
 namespace Couchbase.SemanticKernel.Playground;
 
@@ -19,24 +19,27 @@ internal sealed class Program
         #pragma warning disable SKEXP0010 // Some SK methods are still experimental
 
         var builder = Host.CreateApplicationBuilder(args);
+        
+        // Add configuration from appsettings.json
+        var couchbaseConfig = builder.Configuration.GetSection("Couchbase");
 
         // 1. Register AI and Kernel services
         var kernelBuilder = builder.Services.AddKernel();
         kernelBuilder.AddAzureOpenAIChatCompletion("gpt-4o", "https://my-service.openai.azure.com", "my_token");
         kernelBuilder.AddAzureOpenAITextEmbeddingGeneration("ada-002", "https://my-service.openai.azure.com", "my_token");
 
+
         // 2. Register text search and Couchbase Vector Store
-        kernelBuilder.AddVectorStoreTextSearch<Hotel>();
         builder.Services.AddCouchbaseVectorStoreRecordCollection<Hotel>(
-            connectionString: "<your-couchbase-connection-string>",
-            username: "<your-username>",
-            password: "<your-password>",
-            bucketName: "<your-bucket-name>",
-            scopeName: "<your-scope-name>",
-            collectionName: "<your-collection-name>",
+            connectionString: couchbaseConfig["ConnectionString"],
+            username: couchbaseConfig["Username"],
+            password: couchbaseConfig["Password"],
+            bucketName: couchbaseConfig["BucketName"],
+            scopeName: couchbaseConfig["ScopeName"],
+            collectionName: couchbaseConfig["CollectionName"],
             options: new CouchbaseVectorStoreRecordCollectionOptions<Hotel>
             {
-                IndexName = "<your-index-name>"
+                IndexName = couchbaseConfig["IndexName"]
             });
 
         // 3. Build the host
@@ -50,11 +53,19 @@ internal sealed class Program
         // 5. Ensure the collection exists (create if needed)
         await vectorStoreCollection.CreateCollectionIfNotExistsAsync();
 
-        // INGEST DATA
-        const string csvFileName = "hotels.csv";
+        // Dynamically calculate the file path for the CSV file
+        var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName 
+                          ?? throw new InvalidOperationException("Unable to determine the project root directory.");
 
-        Console.WriteLine($"Ingesting data from '{csvFileName}'...");
-        await IngestCsvAsync(embeddings, vectorStoreCollection, csvFileName);
+        var csvFilePath = Path.Combine(projectRoot, "hotels.csv");
+
+        if (!File.Exists(csvFilePath))
+        {
+            throw new FileNotFoundException($"The file 'hotels.csv' was not found at the path: {csvFilePath}");
+        }
+
+        Console.WriteLine($"Ingesting data from '{csvFilePath}'...");
+        await IngestCsvAsync(embeddings, vectorStoreCollection, csvFilePath);
         Console.WriteLine("Data ingestion complete.");
 
         // 6. Prepare a question and embed it (vector) using your embedding service
@@ -85,7 +96,7 @@ internal sealed class Program
             );
         }
     }
-    
+
     private static async Task IngestCsvAsync(
         ITextEmbeddingGenerationService embeddings,
         IVectorStoreRecordCollection<string, Hotel> vectorStoreCollection,
