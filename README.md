@@ -43,8 +43,10 @@ following characteristics.
 
 ### Setting up Couchbase
 
+Setup a Couchbase Cluster ([Self-Managed](https://www.couchbase.com/downloads) or [Capella](https://www.couchbase.com/products/cloud)) running version 7.6+ with the [Search Service](https://docs.couchbase.com/server/current/search/search.html) enabled
 
-
+For vector search, ensure you have a Vector Search Index configured.
+For more information on creating a vector search index, please follow the [instructions](https://docs.couchbase.com/cloud/vector-search/create-vector-search-index-ui.html).
 
 ### Using the Couchbase Vector Store Connector
 
@@ -142,4 +144,4 @@ public class Hotel
 
 ## License
 
-Couchbase connector for Microsoft Semantic Kernel is licensed under the Apache 2.0 license.S
+Couchbase connector for Microsoft Semantic Kernel is licensed under the Apache 2.0 license.
