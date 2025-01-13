@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>Couchbase.SemanticKernel</PackageId>
+        <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
         <Version>0.1.0</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
@@ -13,7 +13,14 @@
         <PackageTags>Couchbase;SemanticKernel;VectorSearch</PackageTags>
         <RepositoryUrl>https://github.com/Couchbase-Ecosystem/couchbase-semantic-kernel</RepositoryUrl>
         <PackageOutputPath>bin\Release</PackageOutputPath>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <Icon>assets/logo.svg</Icon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\LICENSE.txt" Pack="true" PackagePath="" />
+        <None Include="..\assets\logo.svg" Pack="true" PackagePath="assets\" />
+    </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Functions\" />

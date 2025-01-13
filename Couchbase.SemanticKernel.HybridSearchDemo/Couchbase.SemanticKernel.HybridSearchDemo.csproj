@@ -8,14 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="CouchbaseConnector.SemanticKernel" Version="0.1.0" />
       <PackageReference Include="CouchbaseNetClient" Version="3.6.4" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
       <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.32.0" />
       <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Couchbase.SemanticKernel\Couchbase.SemanticKernel.csproj" />
     </ItemGroup>
 
     <ItemGroup>

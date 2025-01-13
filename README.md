@@ -53,7 +53,7 @@ For more information on creating a vector search index, please follow the [instr
 Add the Couchbase Vector Store connector NuGet package to your project.
 
 ```dotnetcli
-dotnet add package Couchbase.SemanticKernel --prerelease
+dotnet add package CouchbaseConnector.SemanticKernel --prerelease
 ```
 
 You can add the vector store to the dependency injection container available on the `KernelBuilder` or to
