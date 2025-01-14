@@ -2,7 +2,7 @@
 
 # Couchbase connector for Microsoft Semantic Kernel
 
-Repository for `Couchbase.SemanticKernel` the official
+Repository for `CouchbaseConnector.SemanticKernel` the official
 Couchbase [Vector Store Connector](https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/?pivots=programming-language-csharp)
 for
 [Microsoft Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/overview/).
@@ -30,7 +30,7 @@ following characteristics.
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | Collection maps to                | Couchbase collection                                                                                              |
 | Supported key property types      | string                                                                                                            |
-| Supported data property types     | All types that are supported by System.Text.Json (etiher built-in or by using a custom converter)                 |
+| Supported data property types     | All types that are supported by System.Text.Json (either built-in or by using a custom converter)                 |
 | Supported vector property types   | <ul><li>float[]</li><li>IEnumerable\<float\></li></ul>                                                            |
 | Supported index types             | N/A                                                                                                               |
 | Supported distance functions      | <ul><li>CosineSimilarity</li><li>DotProductSimilarity</li><li>EuclideanDistance</li></ul>                         |
@@ -83,6 +83,117 @@ builder.Services.AddCouchbaseVectorStore(
     password: "password",
     bucketName: "bucket-name",
     scopeName: "scope-name");
+```
+
+Extension methods that take no parameters are also provided. These require an instance of the `IScope` class to be
+separately registered with the dependency injection container.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel;
+using Couchbase;
+using Couchbase.KeyValue;
+
+// Using Kernel Builder.
+var kernelBuilder = Kernel.CreateBuilder();
+kernelBuilder.Services.AddSingleton<ICluster>(sp =>
+{
+    var clusterOptions = new ClusterOptions
+    {
+        ConnectionString = "couchbases://your-cluster-address",
+        UserName = "username",
+        Password = "password"
+    };
+
+    return Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
+});
+
+kernelBuilder.Services.AddSingleton<IScope>(sp =>
+{
+    var cluster = sp.GetRequiredService<ICluster>();
+    var bucket = cluster.BucketAsync("bucket-name").GetAwaiter().GetResult();
+    return bucket.Scope("scope-name");
+});
+
+// Add Couchbase Vector Store
+kernelBuilder.Services.AddCouchbaseVectorStore();
+```
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel;
+using Couchbase.KeyValue;
+using Couchbase;
+
+// Using IServiceCollection with ASP.NET Core.
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<ICluster>(sp =>
+{
+    var clusterOptions = new ClusterOptions
+    {
+        ConnectionString = "couchbases://your-cluster-address",
+        UserName = "username",
+        Password = "password"
+    };
+
+    return Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
+});
+
+builder.Services.AddSingleton<IScope>(sp =>
+{
+    var cluster = sp.GetRequiredService<ICluster>();
+    var bucket = cluster.BucketAsync("bucket-name").GetAwaiter().GetResult();
+    return bucket.Scope("scope-name");
+});
+
+// Add Couchbase Vector Store
+builder.Services.AddCouchbaseVectorStore();
+```
+
+You can construct a Couchbase Vector Store instance directly.
+
+```csharp
+using Couchbase;
+using Couchbase.KeyValue;
+using Couchbase.SemanticKernel;
+
+var clusterOptions = new ClusterOptions
+{
+    ConnectionString = "couchbases://your-cluster-address",
+    UserName = "username",
+    Password = "password"
+};
+
+var cluster = await Cluster.ConnectAsync(clusterOptions);
+
+var bucket = await cluster.BucketAsync("bucket-name");
+var scope = bucket.Scope("scope-name");
+
+var vectorStore = new CouchbaseFtsVectorStore(scope);
+```
+
+It is possible to construct a direct reference to a named collection.
+
+```csharp
+using Couchbase;
+using Couchbase.KeyValue;
+using Couchbase.SemanticKernel;
+
+var clusterOptions = new ClusterOptions
+{
+    ConnectionString = "couchbases://your-cluster-address",
+    UserName = "username",
+    Password = "password"
+};
+
+var cluster = await Cluster.ConnectAsync(clusterOptions);
+var bucket = await cluster.BucketAsync("bucket-name");
+var scope = bucket.Scope("scope-name");
+
+var collection = new CouchbaseVectorStoreRecordCollection<Hotel>(
+    scope,
+    "hotelCollection");
 ```
 
 ## Data mapping
