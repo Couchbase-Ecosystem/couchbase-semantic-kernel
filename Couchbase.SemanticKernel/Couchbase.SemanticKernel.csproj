@@ -6,20 +6,23 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
-        <Version>0.1.0</Version>
+        <Version>0.1.1</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase connector for Microsoft Semantic Kernel.</Description>
         <PackageTags>Couchbase;SemanticKernel;VectorSearch</PackageTags>
         <RepositoryUrl>https://github.com/Couchbase-Ecosystem/couchbase-semantic-kernel</RepositoryUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageOutputPath>bin\Release</PackageOutputPath>
+        <PackageIcon>logo.png</PackageIcon>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-        <Icon>assets/logo.svg</Icon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\LICENSE.txt" Pack="true" PackagePath="" />
-        <None Include="..\assets\logo.svg" Pack="true" PackagePath="assets\" />
+        <None Include="..\LICENSE.txt" Pack="true" PackagePath="" Visible="false" />
+        <None Include="..\Assets\logo.png" Pack="true" PackagePath="" Visible="false" />
+        <None Include="..\README.md" Pack="true" PackagePath="" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
