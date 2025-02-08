@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using Couchbase.Core.Exceptions.KeyValue;
 using Couchbase.Core.IO.Transcoders;
 using Couchbase.KeyValue;
@@ -440,7 +439,7 @@ public sealed class CouchbaseFtsVectorStoreRecordCollection<TRecord> : IVectorSt
             this._options.IndexName ?? throw new InvalidOperationException("Index name is required."),
             searchRequest,
             new SearchOptions()
-                .Limit(5)
+                .Limit(searchOptions.Top)
                 .Skip(searchOptions.Skip)             
         ).ConfigureAwait(false);
         
@@ -451,7 +450,7 @@ public sealed class CouchbaseFtsVectorStoreRecordCollection<TRecord> : IVectorSt
             OperationName,
             searchOptions,
             cancellationToken);
-    
+
         // Return the results wrapped in a VectorSearchResults object
         return await Task.FromResult(new VectorSearchResults<TRecord>(mappedResults));
     }

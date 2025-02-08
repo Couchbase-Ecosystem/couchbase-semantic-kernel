@@ -25,9 +25,21 @@ public sealed class CouchbaseFtsVectorStoreRecordMapper<TRecord> : IVectorStoreR
     /// <inheritdoc />
     public byte[] MapFromDataToStorageModel(TRecord dataModel)
     {
-        // Serialize the dataModel into a JsonNode directly using SerializeToNode
-        var storageModel = JsonSerializer.SerializeToNode(dataModel, _jsonSerializerOptions) as JsonObject
-                           ?? throw new JsonException("Failed to serialize data model to JsonObject");
+        var jsonObject = new JsonObject();
+        
+        foreach(var property in _propertyReader.KeyPropertiesInfo)
+        {
+            var storageName = _propertyReader.GetJsonPropertyName(property.Name);
+            var value = property.GetValue(dataModel);
+            jsonObject[storageName] = value is not null ? JsonValue.Create(value) : JsonValue.Create("");
+        }
+        
+        foreach(var property in _propertyReader.DataPropertiesInfo)
+        {
+            var storageName = _propertyReader.GetJsonPropertyName(property.Name);
+            var value = property.GetValue(dataModel);
+            jsonObject[storageName] = value is not null ? JsonValue.Create(value) : JsonValue.Create("");
+        }
         
         // Convert ReadOnlyMemory<float> vectors to float[] for storage
         foreach (var property in _propertyReader.VectorPropertiesInfo)
@@ -37,16 +49,16 @@ public sealed class CouchbaseFtsVectorStoreRecordMapper<TRecord> : IVectorStoreR
 
             if (value is ReadOnlyMemory<float> rom)
             {
-                storageModel[storageName] = JsonSerializer.SerializeToNode(rom.ToArray());
+                jsonObject[storageName] = JsonSerializer.SerializeToNode(rom.ToArray());
             }
             else
             {
-                storageModel[storageName] = value is not null ? JsonValue.Create(value) : JsonValue.Create("");
+                jsonObject[storageName] = value is not null ? JsonValue.Create(value) : JsonValue.Create("");
             }
         }
 
         // Serialize JsonObject to JSON bytes
-        return JsonSerializer.SerializeToUtf8Bytes(storageModel, _jsonSerializerOptions);
+        return JsonSerializer.SerializeToUtf8Bytes(jsonObject, _jsonSerializerOptions);
     }
 
     /// <inheritdoc />
