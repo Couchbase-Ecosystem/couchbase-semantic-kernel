@@ -29,7 +29,7 @@ public static class CouchbaseServiceCollectionExtensions
                 var scope = sp.GetRequiredService<IScope>();
                 var selectedOptions = options ?? sp.GetService<CouchbaseVectorStoreOptions>();
 
-                return new CouchbaseFtsVectorStore(scope, selectedOptions);
+                return new CouchbaseVectorStore(scope, selectedOptions);
             });
 
         return services;
@@ -74,7 +74,7 @@ public static class CouchbaseServiceCollectionExtensions
                 var scope = bucket.Scope(scopeName);
                 var selectedOptions = options ?? sp.GetService<CouchbaseVectorStoreOptions>();
 
-                return new CouchbaseFtsVectorStore(scope, selectedOptions);
+                return new CouchbaseVectorStore(scope, selectedOptions);
             });
 
         return services;
@@ -90,21 +90,20 @@ public static class CouchbaseServiceCollectionExtensions
     /// <param name="options">Optional options to further configure the <see cref="IVectorStoreRecordCollection{TKey, TRecord}"/>.</param>
     /// <param name="serviceId">An optional service id to use as the service key.</param>
     /// <returns>Service collection.</returns>
-    public static IServiceCollection AddCouchbaseVectorStoreRecordCollection<TRecord>(
+    public static IServiceCollection AddCouchbaseFtsVectorStoreRecordCollection<TRecord>(
         this IServiceCollection services,
         string collectionName,
-        CouchbaseVectorStoreRecordCollectionOptions<TRecord>? options = null,
+        CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>? options = null,
         string? serviceId = null)
-        where TRecord : class
     {
         services.AddKeyedTransient<IVectorStoreRecordCollection<string, TRecord>>(
             serviceId,
             (sp, _) =>
             {
                 var scope = sp.GetRequiredService<IScope>();
-                var selectedOptions = options ?? sp.GetService<CouchbaseVectorStoreRecordCollectionOptions<TRecord>>();
+                var selectedOptions = options ?? sp.GetService<CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>>();
 
-                return new CouchbaseVectorStoreRecordCollection<TRecord>(scope, collectionName, selectedOptions);
+                return new CouchbaseFtsVectorStoreRecordCollection<TRecord>(scope, collectionName, selectedOptions);
             });
 
         AddVectorizedSearch<TRecord>(services, serviceId);
@@ -127,7 +126,7 @@ public static class CouchbaseServiceCollectionExtensions
     /// <param name="options">Optional options to further configure the <see cref="IVectorStoreRecordCollection{TKey, TRecord}"/>.</param>
     /// <param name="serviceId">An optional service id to use as the service key.</param>
     /// <returns>Service collection.</returns>
-    public static IServiceCollection AddCouchbaseVectorStoreRecordCollection<TRecord>(
+    public static IServiceCollection AddCouchbaseFtsVectorStoreRecordCollection<TRecord>(
         this IServiceCollection services,
         string connectionString,
         string username,
@@ -135,9 +134,8 @@ public static class CouchbaseServiceCollectionExtensions
         string bucketName,
         string scopeName,
         string collectionName,
-        CouchbaseVectorStoreRecordCollectionOptions<TRecord>? options = null,
+        CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>? options = null,
         string? serviceId = null)
-        where TRecord : class
     {
         services.AddKeyedSingleton<IVectorStoreRecordCollection<string, TRecord>>(
             serviceId,
@@ -153,9 +151,9 @@ public static class CouchbaseServiceCollectionExtensions
                 var cluster = Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
                 var bucket = cluster.BucketAsync(bucketName).GetAwaiter().GetResult();
                 var scope = bucket.Scope(scopeName);
-                var selectedOptions = options ?? sp.GetService<CouchbaseVectorStoreRecordCollectionOptions<TRecord>>();
+                var selectedOptions = options ?? sp.GetService<CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>>();
 
-                return new CouchbaseVectorStoreRecordCollection<TRecord>(scope, collectionName, selectedOptions);
+                return new CouchbaseFtsVectorStoreRecordCollection<TRecord>(scope, collectionName, selectedOptions);
             });
 
         AddVectorizedSearch<TRecord>(services, serviceId);
@@ -170,14 +168,9 @@ public static class CouchbaseServiceCollectionExtensions
     /// <param name="services">The service collection to register on.</param>
     /// <param name="serviceId">The service id that the registrations should use.</param>
     private static void AddVectorizedSearch<TRecord>(IServiceCollection services, string? serviceId)
-        where TRecord : class
     {
         services.AddKeyedTransient<IVectorizedSearch<TRecord>>(
             serviceId,
-            (sp, _) =>
-            {
-                return sp.GetRequiredKeyedService<IVectorStoreRecordCollection<string, TRecord>>(serviceId)
-                    as IVectorizedSearch<TRecord>;
-            });
+            (sp, _) => sp.GetRequiredKeyedService<IVectorStoreRecordCollection<string, TRecord>>(serviceId));
     }
 }

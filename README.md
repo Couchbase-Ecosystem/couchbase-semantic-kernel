@@ -26,18 +26,19 @@ This repository contains the official Couchbase Vector Store Connector implement
 The Couchbase Vector Store connector can be used to access and manage data in Couchbase. The connector has the
 following characteristics.
 
-| Feature Area                      | Support                                                                                                           |
-|-----------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| Collection maps to                | Couchbase collection                                                                                              |
-| Supported key property types      | string                                                                                                            |
-| Supported data property types     | All types that are supported by System.Text.Json (either built-in or by using a custom converter)                 |
-| Supported vector property types   | <ul><li>float[]</li><li>IEnumerable\<float\></li></ul>                                                            |
-| Supported index types             | N/A                                                                                                               |
-| Supported distance functions      | <ul><li>CosineSimilarity</li><li>DotProductSimilarity</li><li>EuclideanDistance</li></ul>                         |
+| Feature Area                          | Support                                                                                                           |
+|---------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Collection maps to                    | Couchbase collection                                                                                              |
+| Supported key property types          | string                                                                                                            |
+| Supported data property types         | All types that are supported by System.Text.Json (either built-in or by using a custom converter)                 |
+| Supported vector property types       | <ul><li>ReadOnlyMemory\<float\></li></ul>                                                                         |
+| Supported index types                 | N/A                                                                                                               |
+| Supported distance functions          | <ul><li>CosineSimilarity</li><li>DotProductSimilarity</li><li>EuclideanDistance</li></ul>                         |
+| Supported filter clauses              | <ul><li>AnyTagEqualTo</li><li>EqualTo</li></ul>                                                                   |
 | Supports multiple vectors in a record | Yes                                                                                                               |
-| IsFilterable supported?           | Yes                                                                                                               |
-| IsFullTextSearchable supported?   | Yes                                                                                                               |
-| StoragePropertyName supported?    | No, use `JsonSerializerOptions` and `JsonPropertyNameAttribute` instead. [See here for more info.](#data-mapping) |
+| IsFilterable supported?               | No                                                                                                                |
+| IsFullTextSearchable supported?       | No                                                                                                                |
+| StoragePropertyName supported?        | No, use `JsonSerializerOptions` and `JsonPropertyNameAttribute` instead. [See here for more info.](#data-mapping) |
 
 ## Getting Started
 
@@ -170,7 +171,7 @@ var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
 var scope = bucket.Scope("scope-name");
 
-var vectorStore = new CouchbaseFtsVectorStore(scope);
+var vectorStore = new CouchbaseVectorStore(scope);
 ```
 
 It is possible to construct a direct reference to a named collection.
@@ -191,7 +192,7 @@ var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
 var scope = bucket.Scope("scope-name");
 
-var collection = new CouchbaseVectorStoreRecordCollection<Hotel>(
+var collection = new CouchbaseFtsVectorStoreRecordCollection<Hotel>(
     scope,
     "hotelCollection");
 ```
@@ -211,12 +212,12 @@ var jsonSerializerOptions = new JsonSerializerOptions
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 };
 
-var options = new CouchbaseVectorStoreRecordCollectionOptions<Hotel>
+var options = new CouchbaseFtsVectorStoreRecordCollectionOptions<Hotel>
 {
     JsonSerializerOptions = jsonSerializerOptions
 };
 
-var collection = new CouchbaseVectorStoreRecordCollection<Hotel>(scope, "hotels", options);
+var collection = new CouchbaseFtsVectorStoreRecordCollection<Hotel>(scope, "hotels", options);
 ```
 Using the above custom `JsonSerializerOptions` which is using `CamelCase`, the following data model will be mapped to the below json.
 
@@ -231,16 +232,16 @@ public class Hotel
     public string HotelId { get; set; }
 
     [JsonPropertyName("hotelName")]
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreRecordData]
     public string HotelName { get; set; }
 
     [JsonPropertyName("description")]
-    [VectorStoreRecordData(IsFullTextSearchable = true)]
+    [VectorStoreRecordData]
     public string Description { get; set; }
 
     [JsonPropertyName("descriptionEmbedding")]
     [VectorStoreRecordVector(Dimensions: 4, DistanceFunction.DotProductSimilarity)]
-    public float[] DescriptionEmbedding { get; set; }
+    public ReadOnlyMemory<float> DescriptionEmbedding { get; set; }
 }
 ```
 
@@ -249,7 +250,7 @@ public class Hotel
   "hotelId": "h1",
   "hotelName": "Hotel Happy",
   "description": "A place where everyone can be happy",
-  "description_embedding": [0.9, 0.1, 0.1, 0.1]
+  "descriptionEmbedding": [0.9, 0.1, 0.1, 0.1]
 }
 ```
 

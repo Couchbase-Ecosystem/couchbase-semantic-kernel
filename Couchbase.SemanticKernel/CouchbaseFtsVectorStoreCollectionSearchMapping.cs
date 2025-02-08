@@ -9,7 +9,7 @@ namespace Couchbase.SemanticKernel;
 /// <summary>
 /// Contains mapping helpers to use when searching for documents using Couchbase.
 /// </summary>
-internal static class CouchbaseVectorStoreCollectionSearchMapping
+internal static class CouchbaseFtsVectorStoreCollectionSearchMapping
 {
     /// <summary>
     /// Build Couchbase filter <see cref="ISearchQuery"/> from the provided <see cref="VectorSearchFilter"/>.

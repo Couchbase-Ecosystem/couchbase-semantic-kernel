@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Couchbase.Core.Exceptions.KeyValue;
+using Couchbase.Core.IO.Transcoders;
 using Couchbase.KeyValue;
 using Couchbase.Management.Collections;
 using Couchbase.Search;
@@ -16,7 +17,7 @@ namespace Couchbase.SemanticKernel;
 /// Service for storing and retrieving vector records, using Couchbase as the underlying storage.
 /// </summary>
 /// <typeparam name="TRecord">The data model to use for adding, updating, and retrieving data from storage.</typeparam>
-public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStoreRecordCollection<string, TRecord>
+public sealed class CouchbaseFtsVectorStoreRecordCollection<TRecord> : IVectorStoreRecordCollection<string, TRecord>
 {
     /// <summary>The name of this database for telemetry purposes.</summary>
     private const string DatabaseName = "Couchbase";
@@ -40,7 +41,7 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
     private readonly string _collectionName;
     
     /// <summary>Optional configuration options for this class.</summary>
-    private readonly CouchbaseVectorStoreRecordCollectionOptions<TRecord> _options;
+    private readonly CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord> _options;
     
     /// <summary>A helper to access property information for the current data model and record definition.</summary>
     private readonly VectorStoreRecordPropertyReader _propertyReader;
@@ -48,22 +49,25 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
     /// <summary>A dictionary that maps from a property name to the storage name that should be used when serializing it to json for data and vector properties.</summary>
     private readonly Dictionary<string, string> _storagePropertyNames = new();
     
+    /// <summary>The property names of the vector storage properties.</summary>
+    private readonly string [] _vectorStoragePropertyNames;
+
     /// <summary>The mapper to use when converting between the data model and the Couchbase record.</summary>
-    private readonly IVectorStoreRecordMapper<TRecord, TRecord> _mapper;
+    private readonly IVectorStoreRecordMapper<TRecord, byte[]?>? _mapper;
 
     /// <inheritdoc />
     public string CollectionName { get; }
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="CouchbaseVectorStoreRecordCollection{TRecord}"/> class.
+    /// Initializes a new instance of the <see cref="CouchbaseFtsVectorStoreRecordCollection{TRecord}"/> class.
     /// </summary>
     /// <param name="scope"><see cref="IScope"/> that can be used to manage the collections in Couchbase.</param>
     /// <param name="collectionName">The name of the collection.</param>
     /// <param name="options">Optional configuration options for this class.</param>
-    public CouchbaseVectorStoreRecordCollection(
+    public CouchbaseFtsVectorStoreRecordCollection(
         IScope scope,
         string collectionName,
-        CouchbaseVectorStoreRecordCollectionOptions<TRecord>? options = null)
+        CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>? options = null)
     {
         // Verify parameters
         Verify.NotNull(scope);
@@ -72,7 +76,7 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
         _scope = scope;
         CollectionName = collectionName;
         _collection = scope.Collection(collectionName);
-        _options = options ?? new CouchbaseVectorStoreRecordCollectionOptions<TRecord>();
+        _options = options ?? new CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>();
 
         // Initialize property reader
         _propertyReader = new VectorStoreRecordPropertyReader(
@@ -83,11 +87,12 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
                 RequiresAtLeastOneVector = false,
                 SupportsMultipleKeys = false,
                 SupportsMultipleVectors = true,
-                JsonSerializerOptions = this._options.JsonSerializerOptions ?? JsonSerializerOptions.Default
             });
 
         // Validate property types
         this._propertyReader.VerifyKeyProperties(s_supportedKeyTypes);
+        
+        this._vectorStoragePropertyNames = this._propertyReader.VectorPropertyJsonNames.ToArray();
 
         // Map storage property names
         foreach (var property in _propertyReader.Properties)
@@ -96,7 +101,24 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
         }
 
         // Initialize mapper
-        _mapper = this.InitializeMapper(this._options.JsonSerializerOptions ?? JsonSerializerOptions.Default);
+        if (this._options.JsonDocumentCustomMapper is not null)
+        {
+            // Custom Mapper.
+            this._mapper = this._options.JsonDocumentCustomMapper;
+        }
+        
+        // Check if the type is a generic data model
+        else if (typeof(TRecord) == typeof(VectorStoreGenericDataModel<string>))
+        {
+            this._mapper = new CouchbaseFtsGenericDataModelMapper(
+                this._propertyReader.Properties, this._options.JsonSerializerOptions
+                ) as IVectorStoreRecordMapper<TRecord, byte[]?>;
+        }
+
+        else
+        {
+            this._mapper = new CouchbaseFtsVectorStoreRecordMapper<TRecord>(this._options.JsonSerializerOptions, this._propertyReader)!;
+        }
     }
 
     /// <inheritdoc />
@@ -201,9 +223,8 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
             {
                 try
                 {
-                    var getResult = await this._collection.GetAsync(key).ConfigureAwait(false);
-
-                    return getResult.ContentAs<TRecord>();
+                    var getResult = await this._collection.GetAsync(key, getOptions => getOptions.Transcoder(new RawJsonTranscoder())).ConfigureAwait(false);
+                    return getResult.ContentAs<byte[]>();
                 }
                 catch (DocumentNotFoundException)
                 {
@@ -248,9 +269,9 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
             {
                 try
                 {
-                    var getResult = await this._collection.GetAsync(key).ConfigureAwait(false);
+                    var getResult = await this._collection.GetAsync(key, getOptions => getOptions.Transcoder(new RawJsonTranscoder()) ).ConfigureAwait(false);
 
-                    return getResult.ContentAs<TRecord>();
+                    return getResult.ContentAs<byte[]>();
                 }
                 catch (DocumentNotFoundException)
                 {
@@ -317,28 +338,35 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
             OperationName,
             () => this._mapper.MapFromDataToStorageModel(record));
 
-        // Retrieve the key value from the storage model
+        // Retrieve the key property name
         var keyPropertyName = this._propertyReader.KeyPropertyName;
+        string? keyValue = null;
 
-        // Use reflection or a direct property lookup
-        var keyProperty = typeof(TRecord).GetProperty(keyPropertyName);
-
-        if (keyProperty == null)
+        // Directly extract the key if record is VectorStoreGenericDataModel<string>
+        if (record is VectorStoreGenericDataModel<string> genericRecord)
         {
-            throw new VectorStoreOperationException($"Key property {keyPropertyName} not found.");
+            keyValue = genericRecord.Key;
+        }
+        else
+        {
+            // Use reflection if record is of a different type
+            var keyProperty = typeof(TRecord).GetProperty(keyPropertyName);
+            keyValue = keyProperty?.GetValue(record)?.ToString();
         }
 
-        var keyValue = keyProperty.GetValue(record)?.ToString();
-
+        // Ensure keyValue is valid
         if (string.IsNullOrWhiteSpace(keyValue))
         {
-            throw new VectorStoreOperationException($"Key property {keyPropertyName} is not initialized.");
+            throw new VectorStoreOperationException($"Key property '{keyPropertyName}' is not initialized.");
         }
 
         // Perform the upsert operation
         await this.RunOperationAsync(OperationName, async () =>
         {
-            await this._collection.UpsertAsync(keyValue, storageModel).ConfigureAwait(false);
+            await this._collection.UpsertAsync(
+                keyValue, storageModel,
+                upsertOptions => upsertOptions.Transcoder(new RawJsonTranscoder())
+            ).ConfigureAwait(false);
         }).ConfigureAwait(false);
 
         return keyValue;
@@ -379,31 +407,20 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
         // Validate the input vector
         float[] floatVector = vector switch
         {
-            float[] v => v,
             ReadOnlyMemory<float> v => v.ToArray(),
-            IEnumerable<float> v => v.ToArray(),
             _ => throw new NotSupportedException(
                 $"The provided vector type {vector.GetType().FullName} is not supported by the Couchbase connector. " +
-                $"Supported types: float[], ReadOnlyMemory<float>, IEnumerable<float>.")
+                $"Supported types: ReadOnlyMemory<float>")
         };
     
         // Retrieve collection-level options and combine with method-level options
         var searchOptions = options ?? s_defaultVectorSearchOptions;
-    
-        // Retrieve the vector property for the search
-        var vectorProperty = this.GetVectorPropertyForSearch(searchOptions.VectorPropertyName);
-        if (vectorProperty is null)
-        {
-            throw new InvalidOperationException(
-                "The collection does not have any vector properties, so vector search is not possible.");
-        }
-    
-        // Map the vector field name to the storage property
-        var vectorFieldName = ToCamelCase(this._storagePropertyNames[vectorProperty.DataModelPropertyName]);
-    
+        
+        var vectorFieldName = searchOptions.VectorPropertyName ?? this._vectorStoragePropertyNames.FirstOrDefault();
+        
         // Build the primary vector query
         var vectorQuery = VectorQuery.Create(
-            vectorFieldName,
+            vectorFieldName!,
             floatVector,
             new VectorQueryOptions
             {
@@ -411,7 +428,7 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
                 Boost = _options.Boost
             });
         
-        var filterQuery = CouchbaseVectorStoreCollectionSearchMapping.BuildFilter(searchOptions.Filter, this._storagePropertyNames);
+        var filterQuery = CouchbaseFtsVectorStoreCollectionSearchMapping.BuildFilter(searchOptions.Filter, this._storagePropertyNames);
         
         // Construct the final search request
         var searchRequest = new SearchRequest(
@@ -423,7 +440,7 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
             this._options.IndexName ?? throw new InvalidOperationException("Index name is required."),
             searchRequest,
             new SearchOptions()
-                .Limit(searchOptions.Top)
+                .Limit(5)
                 .Skip(searchOptions.Skip)             
         ).ConfigureAwait(false);
         
@@ -437,16 +454,6 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
     
         // Return the results wrapped in a VectorSearchResults object
         return await Task.FromResult(new VectorSearchResults<TRecord>(mappedResults));
-    }
-
-    private static string ToCamelCase(string input)
-    {
-        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
-        {
-            return input; // Already camel case or invalid input
-        }
-
-        return char.ToLowerInvariant(input[0]) + input.Substring(1);
     }
 
     private async IAsyncEnumerable<VectorSearchResult<TRecord>> MapSearchResultsAsync(
@@ -467,8 +474,8 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
            var score = hit.Score;
 
            // Fetch the full document from KV by the doc ID
-           var getResult = await this._collection.GetAsync(docId).ConfigureAwait(false);
-           var docFromDb = getResult.ContentAs<TRecord>();
+           var getResult = await this._collection.GetAsync(docId, options => options.Transcoder(new RawJsonTranscoder())).ConfigureAwait(false);
+           var docFromDb = getResult.ContentAs<byte[]>();
 
            // Optionally run your mapper (if you have a custom mapping layer)
            var record = VectorStoreErrorHandler.RunModelConversion(
@@ -486,28 +493,7 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
        }
    }
 
-   private VectorStoreRecordVectorProperty? GetVectorPropertyForSearch(string? vectorFieldName)
-   {
-       // If vector property name is provided in options, try to find it in schema or throw an exception.
-       if (!string.IsNullOrWhiteSpace(vectorFieldName))
-       {
-           // Check vector properties by data model property name.
-           var vectorProperty = this._propertyReader.VectorProperties
-               .FirstOrDefault(l => l.DataModelPropertyName.Equals(vectorFieldName, StringComparison.Ordinal));
-
-           if (vectorProperty is not null)
-           {
-               return vectorProperty;
-           }
-
-           throw new InvalidOperationException($"The {typeof(TRecord).FullName} type does not have a vector property named '{vectorFieldName}'.");
-       }
-
-       // If vector property is not provided in options, return first vector property from schema.
-       return this._propertyReader.VectorProperty;
-   }
-
-   private async Task RunOperationAsync(string operationName, Func<Task> operation)
+    private async Task RunOperationAsync(string operationName, Func<Task> operation)
     {
         try
         {
@@ -540,32 +526,4 @@ public sealed class CouchbaseVectorStoreRecordCollection<TRecord> : IVectorStore
             };
         }
     }
-    
-    /// <summary>
-    /// Returns custom mapper, generic data model mapper or default record mapper.
-    /// </summary>
-    private IVectorStoreRecordMapper<TRecord, TRecord> InitializeMapper(JsonSerializerOptions jsonSerializerOptions)
-    {
-        // Use custom mapper if provided
-        if (this._options.JsonDocumentCustomMapper is not null)
-        {
-            return this._options.JsonDocumentCustomMapper;
-        }
-
-        // Check if the type is a generic data model
-        if (typeof(TRecord) == typeof(VectorStoreGenericDataModel<string>))
-        {
-            var mapper = new CouchbaseGenericDataModelMapper(
-                this._propertyReader.Properties,
-                this._storagePropertyNames,
-                jsonSerializerOptions);
-
-            // Return the mapper cast to the expected type
-            return (mapper as IVectorStoreRecordMapper<TRecord, TRecord>)!;
-        }
-
-        // Fallback to default mapper with correct type parameter
-        return new CouchbaseVectorStoreRecordMapper<TRecord>(jsonSerializerOptions);
-    }
-
 }

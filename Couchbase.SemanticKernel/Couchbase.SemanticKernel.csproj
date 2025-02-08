@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net8</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
-        <Version>0.1.1</Version>
+        <Version>0.2.0</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase connector for Microsoft Semantic Kernel.</Description>
@@ -16,7 +16,7 @@
         <PackageOutputPath>bin\Release</PackageOutputPath>
         <PackageIcon>logo.png</PackageIcon>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>        
     </PropertyGroup>
 
     <ItemGroup>

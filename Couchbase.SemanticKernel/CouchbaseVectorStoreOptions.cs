@@ -3,12 +3,12 @@ using System.Text.Json;
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Options when creating a <see cref="CouchbaseFtsVectorStore"/>.
+/// Options when creating a <see cref="CouchbaseVectorStore"/>.
 /// </summary>
 public sealed class CouchbaseVectorStoreOptions
 {
     /// <summary>
-    /// An optional factory to use for constructing <see cref="CouchbaseVectorStoreRecordCollection{TRecord}"/> instances, if a custom record collection is required.
+    /// An optional factory to use for constructing <see cref="CouchbaseFtsVectorStoreRecordCollection{TRecord}"/> instances, if a custom record collection is required.
     /// </summary>
     public ICouchbaseVectorStoreRecordCollectionFactory? VectorStoreCollectionFactory { get; init; }
     

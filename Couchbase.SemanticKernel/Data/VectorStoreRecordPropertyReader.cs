@@ -6,12 +6,14 @@ using Microsoft.Extensions.VectorData;
 
 namespace Couchbase.SemanticKernel.Data;
 
+#pragma warning disable IDE0007, IDE0028, IDE0032, IDE0059
+
 /// <summary>
 /// Contains helpers for reading vector store model properties and their attributes.
 /// </summary>
 [ExcludeFromCodeCoverage]
 #pragma warning disable CA1812 // Used in some projects but not all, so need to suppress to avoid warnings in those it's not used in.
-internal sealed class VectorStoreRecordPropertyReader
+public sealed class VectorStoreRecordPropertyReader
 #pragma warning restore CA1812
 {
     /// <summary>The <see cref="Type"/> of the data model.</summary>
@@ -639,3 +641,5 @@ internal sealed class VectorStoreRecordPropertyReader
         return property.DataModelPropertyName;
     }
 }
+
+#pragma warning restore IDE0007, IDE0028, IDE0032, IDE0059

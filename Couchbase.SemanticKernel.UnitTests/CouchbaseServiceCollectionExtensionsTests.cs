@@ -28,7 +28,7 @@ public class CouchbaseServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(vectorStore);
-        Assert.IsType<CouchbaseFtsVectorStore>(vectorStore);
+        Assert.IsType<CouchbaseVectorStore>(vectorStore);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class CouchbaseServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(vectorStore);
-        Assert.IsType<CouchbaseFtsVectorStore>(vectorStore);
+        Assert.IsType<CouchbaseVectorStore>(vectorStore);
 
         var scope = (IScope)vectorStore.GetType().GetField("_scope", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vectorStore)!;
         Assert.NotNull(scope);
@@ -53,7 +53,7 @@ public class CouchbaseServiceCollectionExtensionsTests
     public void AddVectorStoreRecordCollectionWithConnectionStringRegistersClass()
     {
         // Act
-        this._serviceCollection.AddCouchbaseVectorStoreRecordCollection<TestRecord>(
+        this._serviceCollection.AddCouchbaseFtsVectorStoreRecordCollection<TestRecord>(
             "",
             "",
             "",
@@ -71,11 +71,11 @@ public class CouchbaseServiceCollectionExtensionsTests
 
         var collection = serviceProvider.GetRequiredService<IVectorStoreRecordCollection<string, TestRecord>>();
         Assert.NotNull(collection);
-        Assert.IsType<CouchbaseVectorStoreRecordCollection<TestRecord>>(collection);
+        Assert.IsType<CouchbaseFtsVectorStoreRecordCollection<TestRecord>>(collection);
 
         var vectorizedSearch = serviceProvider.GetRequiredService<IVectorizedSearch<TestRecord>>();
         Assert.NotNull(vectorizedSearch);
-        Assert.IsType<CouchbaseVectorStoreRecordCollection<TestRecord>>(vectorizedSearch);
+        Assert.IsType<CouchbaseFtsVectorStoreRecordCollection<TestRecord>>(vectorizedSearch);
     }
 
     private sealed class TestRecord

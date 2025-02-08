@@ -5,7 +5,6 @@ using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Embeddings;
-using Couchbase.SemanticKernel;
 
 namespace Couchbase.SemanticKernel.Playground;
 
@@ -28,16 +27,15 @@ internal sealed class Program
         kernelBuilder.AddAzureOpenAIChatCompletion("gpt-4o", "https://my-service.openai.azure.com", "my_token");
         kernelBuilder.AddAzureOpenAITextEmbeddingGeneration("ada-002", "https://my-service.openai.azure.com", "my_token");
 
-
         // 2. Register text search and Couchbase Vector Store
-        builder.Services.AddCouchbaseVectorStoreRecordCollection<Hotel>(
+        builder.Services.AddCouchbaseFtsVectorStoreRecordCollection<Hotel>(
             connectionString: couchbaseConfig["ConnectionString"],
             username: couchbaseConfig["Username"],
             password: couchbaseConfig["Password"],
             bucketName: couchbaseConfig["BucketName"],
             scopeName: couchbaseConfig["ScopeName"],
             collectionName: couchbaseConfig["CollectionName"],
-            options: new CouchbaseVectorStoreRecordCollectionOptions<Hotel>
+            options: new CouchbaseFtsVectorStoreRecordCollectionOptions<Hotel>
             {
                 IndexName = couchbaseConfig["IndexName"]
             });
@@ -71,7 +69,7 @@ internal sealed class Program
         // 6. Prepare a question and embed it (vector) using your embedding service
         const string userQuestion = "Which hotels are great for nature lovers with hiking trails?";
         var embeddingResult = await embeddings.GenerateEmbeddingsAsync(new[] { userQuestion });
-        var userEmbedding = embeddingResult[0].ToArray();
+        var userEmbedding = embeddingResult[0];
 
         // 7. Customize your VectorSearchOptions
         var mySearchOptions = new VectorSearchOptions
@@ -125,7 +123,7 @@ internal sealed class Program
                     HotelId = fields[0],
                     HotelName = fields[1],
                     Description = fields[2],
-                    DescriptionEmbedding = embedResults[i].ToArray(),
+                    DescriptionEmbedding = embedResults[i],
                     ReferenceLink = fields[3]
                 };
                 await vectorStoreCollection.UpsertAsync(doc);
@@ -141,18 +139,18 @@ public sealed record Hotel
     public string HotelId { get; set; }
 
     [TextSearchResultName]
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreRecordData]
     [JsonPropertyName("hotelName")]
     public string HotelName { get; set; }
 
     [TextSearchResultValue]
-    [VectorStoreRecordData(IsFullTextSearchable = true)]
+    [VectorStoreRecordData]
     [JsonPropertyName("description")]
     public string Description { get; set; }
 
     [VectorStoreRecordVector(Dimensions: 1536, DistanceFunction.DotProductSimilarity)]
     [JsonPropertyName("descriptionEmbedding")]
-    public float[] DescriptionEmbedding { get; set; }
+    public ReadOnlyMemory<float> DescriptionEmbedding { get; set; }
 
     [TextSearchResultLink]
     [VectorStoreRecordData]

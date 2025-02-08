@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using Couchbase.SemanticKernel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.VectorData;
@@ -34,14 +33,14 @@ internal sealed class Program
         kernelBuilder.AddVectorStoreTextSearch<Hotel>();
         
         // Register Couchbase Vector Store using provided extensions.
-        builder.Services.AddCouchbaseVectorStoreRecordCollection<Hotel>(
+        builder.Services.AddCouchbaseFtsVectorStoreRecordCollection<Hotel>(
             connectionString: couchbaseConfig["ConnectionString"],
             username: couchbaseConfig["Username"],
             password: couchbaseConfig["Password"],
             bucketName: couchbaseConfig["BucketName"],
             scopeName: couchbaseConfig["ScopeName"],
             collectionName: couchbaseConfig["CollectionName"],
-            options: new CouchbaseVectorStoreRecordCollectionOptions<Hotel>
+            options: new CouchbaseFtsVectorStoreRecordCollectionOptions<Hotel>
             {
                 IndexName = couchbaseConfig["IndexName"]
             });
@@ -89,7 +88,7 @@ internal sealed class Program
                      HotelName = hotel[1],
                      HotelId = hotel[0],
                      Description = hotel[2],
-                     DescriptionEmbedding = descriptionEmbeddings[i].ToArray(),
+                     DescriptionEmbedding = descriptionEmbeddings[i],
                      ReferenceLink = hotel[3]
                  });
              }
@@ -135,18 +134,18 @@ public sealed record Hotel
     public required string HotelId { get; set; }
 
     [TextSearchResultName]
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreRecordData]
     [JsonPropertyName("hotelName")]
     public required string HotelName { get; set; }
 
     [TextSearchResultValue]
-    [VectorStoreRecordData(IsFullTextSearchable = true)]
+    [VectorStoreRecordData]
     [JsonPropertyName("description")]
     public required string Description { get; set; }
 
     [VectorStoreRecordVector(Dimensions: 1536, DistanceFunction.DotProductSimilarity)]
     [JsonPropertyName("descriptionEmbedding")]
-    public float[] DescriptionEmbedding { get; set; }
+    public ReadOnlyMemory<float> DescriptionEmbedding { get; set; }
 
     [TextSearchResultLink]
     [VectorStoreRecordData]

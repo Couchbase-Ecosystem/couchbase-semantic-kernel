@@ -1,15 +1,12 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using Couchbase.Search;
-using Couchbase.Search.Queries.Vector;
 using Microsoft.Extensions.VectorData;
 
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Options when creating a <see cref="CouchbaseVectorStoreRecordCollection{TRecord}"/>.
+/// Options when creating a <see cref="CouchbaseFtsVectorStoreRecordCollection{TRecord}"/>.
 /// </summary>
-public sealed class CouchbaseVectorStoreRecordCollectionOptions<TRecord>
+public sealed class CouchbaseFtsVectorStoreRecordCollectionOptions<TRecord>
 {
     /// <summary>
     /// Gets or sets an optional custom mapper to use when converting between the data model and the Couchbase JSON document.
@@ -17,7 +14,7 @@ public sealed class CouchbaseVectorStoreRecordCollectionOptions<TRecord>
     /// <remarks>
     /// If not set, the default mapper provided by the Couchbase SDK will be used.
     /// </remarks>
-    public IVectorStoreRecordMapper<TRecord, TRecord>? JsonDocumentCustomMapper { get; init; } = null;
+    public IVectorStoreRecordMapper<TRecord, byte[]>? JsonDocumentCustomMapper { get; init; } = null;
 
     /// <summary>
     /// Gets or sets an optional record definition that defines the schema of the record type.

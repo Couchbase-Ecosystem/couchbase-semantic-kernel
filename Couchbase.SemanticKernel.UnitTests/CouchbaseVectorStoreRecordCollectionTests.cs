@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Couchbase.KeyValue;
 using Couchbase.Management.Buckets;
@@ -26,7 +28,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
     public void ConstructorForModelWithoutKeyThrowsException()
     {
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() => new CouchbaseVectorStoreRecordCollection<object>(this._mockScope.Object, "collection"));
+        var exception = Assert.Throws<ArgumentException>(() => new CouchbaseFtsVectorStoreRecordCollection<object>(this._mockScope.Object, "collection"));
         Assert.Contains("No key property found", exception.Message);
     }
 
@@ -34,7 +36,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
     public void ConstructorWithDeclarativeModelInitializesCollection()
     {
         // Act and Assert
-        var collection = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, "collection");
+        var collection = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, "collection");
         Assert.NotNull(collection);
     }
 
@@ -51,10 +53,10 @@ public class CouchbaseVectorStoreRecordCollectionTests
         };
         
         // Act
-        var collection = new CouchbaseVectorStoreRecordCollection<TestModel>(
+        var collection = new CouchbaseFtsVectorStoreRecordCollection<TestModel>(
             this._mockScope.Object,
             "collection",
-            new CouchbaseVectorStoreRecordCollectionOptions<TestModel>
+            new CouchbaseFtsVectorStoreRecordCollectionOptions<TestModel>
             {
                 VectorStoreRecordDefinition = definition
             });
@@ -83,7 +85,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
 
         _mockScope.Setup(s => s.Bucket.Collections).Returns(_mockCollectionManager.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, collectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, collectionName);
 
         // Act
         var actualResult = await sut.CollectionExistsAsync();
@@ -128,7 +130,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
         _mockScope.Setup(s => s.Name).Returns(ScopeName);
         _mockScope.Setup(s => s.Bucket.Collections).Returns(_mockCollectionManager.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
 
         // Act
         await sut.CreateCollectionAsync();
@@ -173,7 +175,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
         mockScope.Setup(s => s.Name).Returns(ScopeName);
         mockScope.Setup(s => s.Bucket.Collections).Returns(_mockCollectionManager.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(mockScope.Object, CollectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(mockScope.Object, CollectionName);
 
         // Act
         await sut.CreateCollectionAsync();
@@ -225,7 +227,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
         _mockScope.Setup(scope => scope.Name).Returns(ScopeName);
         _mockScope.Setup(scope => scope.Bucket.Collections).Returns(_mockCollectionManager.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
 
         // Act
         await sut.CreateCollectionIfNotExistsAsync();
@@ -248,7 +250,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
         
         _mockScope.Setup(s => s.Collection(It.IsAny<string>())).Returns(_mockCollection.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, CollectionName);
 
         // Act
         await sut.DeleteAsync(RecordKey);
@@ -281,7 +283,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
             .Setup(s => s.Collection(It.IsAny<string>()))
             .Returns(this._mockCollection.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, "test-collection");
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, "test-collection");
 
         // Act
         await sut.DeleteBatchAsync(recordKeys);
@@ -318,7 +320,7 @@ public class CouchbaseVectorStoreRecordCollectionTests
         this._mockScope.Setup(scope => scope.Bucket.Collections).Returns(_mockCollectionManager.Object);
 
         // System Under Test (SUT)
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, CollectionName);
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(this._mockScope.Object, CollectionName);
 
         // Act
         await sut.DeleteCollectionAsync();
@@ -360,19 +362,19 @@ public class CouchbaseVectorStoreRecordCollectionTests
             .Setup(s => s.Collection(It.IsAny<string>()))
             .Returns(_mockCollection.Object);
 
-        // Mock Mapper (not required if direct mapping is used)
-        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, CouchbaseHotelModel>>();
+        // Mock Mapper (updated to handle byte[] as output)
+        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>>();
         mockMapper
             .Setup(m => m.MapFromStorageToDataModel(
-                It.IsAny<CouchbaseHotelModel>(), 
+                It.IsAny<byte[]>(), 
                 It.IsAny<StorageToDataModelMapperOptions>()))
-            .Returns(expectedRecord);
+            .Returns(expectedRecord); // Assuming you return the mapped record from byte[]
 
         // Create the SUT
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
             mockScope.Object, 
             "test-collection", 
-            new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+            new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
             {
                 JsonDocumentCustomMapper = mockMapper.Object
             });
@@ -394,11 +396,10 @@ public class CouchbaseVectorStoreRecordCollectionTests
 
         mockMapper.Verify(
             m => m.MapFromStorageToDataModel(
-                It.IsAny<CouchbaseHotelModel>(), 
+                It.IsAny<byte[]>(), // Adjusted to use byte[] as input type
                 It.IsAny<StorageToDataModelMapperOptions>()),
             Times.Once());
     }
-
 
     [Fact]
     public async Task GetBatchReturnsValidRecordAsync()
@@ -411,15 +412,20 @@ public class CouchbaseVectorStoreRecordCollectionTests
             new("key3") { HotelName = "Test Name 3" }
         };
 
+        // Mock JSON response as byte array
+        var jsonResults = expectedRecords
+            .Select(r => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(r)))
+            .ToList();
+
         var mockResult1 = new Mock<IGetResult>();
-        mockResult1.Setup(r => r.ContentAs<CouchbaseHotelModel>()).Returns(expectedRecords[0]);
+        mockResult1.Setup(r => r.ContentAs<byte[]>()).Returns(jsonResults[0]);
 
         var mockResult2 = new Mock<IGetResult>();
-        mockResult2.Setup(r => r.ContentAs<CouchbaseHotelModel>()).Returns(expectedRecords[1]);
+        mockResult2.Setup(r => r.ContentAs<byte[]>()).Returns(jsonResults[1]);
 
         var mockResult3 = new Mock<IGetResult>();
-        mockResult3.Setup(r => r.ContentAs<CouchbaseHotelModel>()).Returns(expectedRecords[2]);
-        
+        mockResult3.Setup(r => r.ContentAs<byte[]>()).Returns(jsonResults[2]);
+
         // Setup individual GetAsync calls
         _mockCollection.Setup(c => c.GetAsync("key1", It.IsAny<GetOptions?>()))
             .ReturnsAsync(mockResult1.Object);
@@ -432,11 +438,21 @@ public class CouchbaseVectorStoreRecordCollectionTests
 
         _mockScope.Setup(s => s.Collection(It.IsAny<string>())).Returns(_mockCollection.Object);
 
+        // Mock Mapper (adjusted for byte[] conversion)
+        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>>();
+        mockMapper
+            .Setup(m => m.MapFromStorageToDataModel(It.IsAny<byte[]>(), It.IsAny<StorageToDataModelMapperOptions>()))
+            .Returns<byte[], StorageToDataModelMapperOptions>((b, _) =>
+                JsonSerializer.Deserialize<CouchbaseHotelModel>(Encoding.UTF8.GetString(b))!);
+
         // Create the SUT
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
             _mockScope.Object,
             "test-collection",
-            new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>());
+            new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+            {
+                JsonDocumentCustomMapper = mockMapper.Object
+            });
 
         // Act
         var results = await sut.GetBatchAsync(new[] { "key1", "key2", "key3" }).ToListAsync();
@@ -458,25 +474,28 @@ public class CouchbaseVectorStoreRecordCollectionTests
         _mockCollection.Verify(c => c.GetAsync("key1", It.IsAny<GetOptions?>()), Times.Once);
         _mockCollection.Verify(c => c.GetAsync("key2", It.IsAny<GetOptions?>()), Times.Once);
         _mockCollection.Verify(c => c.GetAsync("key3", It.IsAny<GetOptions?>()), Times.Once);
-    }
 
+        // Verify that the mapper was used
+        mockMapper.Verify(
+            m => m.MapFromStorageToDataModel(It.IsAny<byte[]>(), It.IsAny<StorageToDataModelMapperOptions>()),
+            Times.Exactly(3));
+    }
 
     [Fact]
     public async Task GetWithCustomMapperWorksCorrectlyAsync()
     {
         // Arrange
         const string RecordKey = "key";
+        var expectedHotel = new CouchbaseHotelModel(RecordKey) { HotelName = "Mapped Name" };
 
-        var expectedHotel = new CouchbaseHotelModel(RecordKey)
-        {
-            HotelName = "Mapped Name"
-        };
+        // Mock JSON response as byte array
+        var jsonData = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(expectedHotel));
 
         // Mock IGetResult for GetAsync
         var mockGetResult = new Mock<IGetResult>();
         mockGetResult
-            .Setup(r => r.ContentAs<CouchbaseHotelModel>())
-            .Returns(expectedHotel);
+            .Setup(r => r.ContentAs<byte[]>())
+            .Returns(jsonData);
 
         // Mock Couchbase collection
         _mockCollection
@@ -491,18 +510,19 @@ public class CouchbaseVectorStoreRecordCollectionTests
             .Returns(_mockCollection.Object);
 
         // Mock Mapper
-        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, CouchbaseHotelModel>>();
+        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>>();
         mockMapper
             .Setup(m => m.MapFromStorageToDataModel(
-                It.IsAny<CouchbaseHotelModel>(), 
+                It.IsAny<byte[]>(),
                 It.IsAny<StorageToDataModelMapperOptions>()))
-            .Returns(expectedHotel);
+            .Returns<byte[], StorageToDataModelMapperOptions>((b, _) =>
+                JsonSerializer.Deserialize<CouchbaseHotelModel>(Encoding.UTF8.GetString(b))!);
 
         // Create the System Under Test (SUT)
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
-            _mockScope.Object, 
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
+            _mockScope.Object,
             "test-collection",
-            new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+            new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
             {
                 JsonDocumentCustomMapper = mockMapper.Object
             });
@@ -520,6 +540,11 @@ public class CouchbaseVectorStoreRecordCollectionTests
             c => c.GetAsync(
                 It.Is<string>(key => key == RecordKey),
                 It.IsAny<GetOptions?>()),
+            Times.Once());
+
+        // Verify that the mapper was used
+        mockMapper.Verify(
+            m => m.MapFromStorageToDataModel(It.IsAny<byte[]>(), It.IsAny<StorageToDataModelMapperOptions>()),
             Times.Once());
     }
 
@@ -548,13 +573,13 @@ public class CouchbaseVectorStoreRecordCollectionTests
             .Setup(s => s.Collection(It.IsAny<string>()))
             .Returns(_mockCollection.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, "test-collection");
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, "test-collection");
 
         // Act
         var result = await sut.UpsertAsync(hotel);
 
         // Assert
-        Assert.Equal("key", result);
+        Assert.Equal("key", result); // Ensures that the returned key is correct
     }
 
     [Fact]
@@ -566,32 +591,38 @@ public class CouchbaseVectorStoreRecordCollectionTests
         var hotel3 = new CouchbaseHotelModel("key3") { HotelName = "Test Name 3" };
 
         var mockMutationResult = new Mock<IMutationResult>();
-        
-        // Mock UpsertAsync for each key
+
+        // Set up the mock for each UpsertAsync call.
         _mockCollection
             .Setup(l => l.UpsertAsync(
                 "key1",
-                It.Is<JsonObject>(doc => doc["HotelId"]!.ToString() == "key1" && doc["HotelName"]!.ToString() == "Test Name 1"),
+                It.Is<byte[]>(b => ValidateHotelData(b, "key1", "Test Name 1")),
                 It.IsAny<UpsertOptions?>()))
             .ReturnsAsync(mockMutationResult.Object);
 
         _mockCollection
             .Setup(l => l.UpsertAsync(
                 "key2",
-                It.Is<JsonObject>(doc => doc["HotelId"]!.ToString() == "key2" && doc["HotelName"]!.ToString() == "Test Name 2"),
+                It.Is<byte[]>(b => ValidateHotelData(b, "key2", "Test Name 2")),
                 It.IsAny<UpsertOptions?>()))
             .ReturnsAsync(mockMutationResult.Object);
 
         _mockCollection
             .Setup(l => l.UpsertAsync(
                 "key3",
-                It.Is<JsonObject>(doc => doc["HotelId"]!.ToString() == "key3" && doc["HotelName"]!.ToString() == "Test Name 3"),
+                It.Is<byte[]>(b => ValidateHotelData(b, "key3", "Test Name 3")),
                 It.IsAny<UpsertOptions?>()))
             .ReturnsAsync(mockMutationResult.Object);
 
-        _mockScope.Setup(s => s.Collection(It.IsAny<string>())).Returns(_mockCollection.Object);
+        _mockScope
+            .Setup(s => s.Collection(It.IsAny<string>()))
+            .Returns(_mockCollection.Object);
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(_mockScope.Object, "test-collection");
+        // Create the System Under Test (SUT)
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
+            _mockScope.Object,
+            "test-collection"
+        );
 
         // Act
         var results = await sut.UpsertBatchAsync(new[] { hotel1, hotel2, hotel3 }).ToListAsync();
@@ -599,48 +630,67 @@ public class CouchbaseVectorStoreRecordCollectionTests
         // Assert
         Assert.NotNull(results);
         Assert.Equal(3, results.Count);
-
         Assert.Equal("key1", results[0]);
         Assert.Equal("key2", results[1]);
         Assert.Equal("key3", results[2]);
+
+        // Optionally, verify that UpsertAsync was called exactly once per key.
+        _mockCollection.Verify(
+            l => l.UpsertAsync("key1", It.IsAny<byte[]>(), It.IsAny<UpsertOptions?>()),
+            Times.Once);
+        _mockCollection.Verify(
+            l => l.UpsertAsync("key2", It.IsAny<byte[]>(), It.IsAny<UpsertOptions?>()),
+            Times.Once);
+        _mockCollection.Verify(
+            l => l.UpsertAsync("key3", It.IsAny<byte[]>(), It.IsAny<UpsertOptions?>()),
+            Times.Once);
     }
-    
+
+    private bool ValidateHotelData(byte[] b, string expectedHotelId, string expectedHotelName)
+    {
+        using var doc = JsonDocument.Parse(b);
+        return doc.RootElement.GetProperty("HotelId").GetString() == expectedHotelId &&
+               doc.RootElement.GetProperty("HotelName").GetString() == expectedHotelName;
+    }
+
     [Fact]
     public async Task UpsertWithCustomMapperWorksCorrectlyAsync()
     {
         // Arrange
         var hotel = new CouchbaseHotelModel("key") { HotelName = "Test Name" };
 
-        // Mock custom mapper
-        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, CouchbaseHotelModel>>();
+        // Prepare the expected storage model as a byte array.
+        var storageModel = JsonSerializer.SerializeToUtf8Bytes(hotel);
+
+        // Mock custom mapper of type IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>
+        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>>();
         mockMapper
             .Setup(m => m.MapFromDataToStorageModel(It.IsAny<CouchbaseHotelModel>()))
-            .Returns(hotel);
+            .Returns(storageModel);
 
         // Mock MutationResult for Upsert
         var mockMutationResult = new Mock<IMutationResult>();
         mockMutationResult.SetupGet(m => m.Cas).Returns(12345UL); // Simulate CAS value
 
-        // Mock Couchbase collection
+        // Mock Couchbase collection to expect a call with key "key" and a byte[] matching storageModel.
         _mockCollection
             .Setup(l => l.UpsertAsync(
                 "key",
-                It.Is<CouchbaseHotelModel>(doc =>
-                    doc.HotelId == "key" && doc.HotelName == "Test Name"),
+                It.Is<byte[]>(b => b.SequenceEqual(storageModel)),
                 It.IsAny<UpsertOptions?>()))
             .ReturnsAsync(mockMutationResult.Object)
             .Verifiable();
 
-        // Mock Scope
+        // Mock Scope to return the collection mock.
         _mockScope
             .Setup(s => s.Collection(It.IsAny<string>()))
             .Returns(_mockCollection.Object);
 
-        // Create System Under Test (SUT)
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
+        // Create the System Under Test (SUT) with the custom mapper provided.
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
             _mockScope.Object,
             "test-collection",
-            new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+            new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
             {
                 JsonDocumentCustomMapper = mockMapper.Object
             });
@@ -651,12 +701,11 @@ public class CouchbaseVectorStoreRecordCollectionTests
         // Assert
         Assert.Equal("key", result);
 
-        // Verify the correct upsert operation
+        // Verify the correct upsert operation was called exactly once.
         _mockCollection.Verify(
             l => l.UpsertAsync(
                 "key",
-                It.Is<CouchbaseHotelModel>(doc =>
-                    doc.HotelId == "key" && doc.HotelName == "Test Name"),
+                It.Is<byte[]>(b => b.SequenceEqual(storageModel)),
                 It.IsAny<UpsertOptions?>()),
             Times.Once());
     }
@@ -691,19 +740,15 @@ public class CouchbaseVectorStoreRecordCollectionTests
             .Setup(result => result.Hits)
             .Returns(new List<ISearchQueryRow> { mockSearchRow.Object });
 
-        // Mock collection
-        _mockCollection
-            .Setup(collection => collection.GetAsync(It.IsAny<string>(), It.IsAny<GetOptions>()))
-            .ReturnsAsync(new Mock<IGetResult>().Object);
+        // Mock JSON response as byte array
+        var expectedHotel = new CouchbaseHotelModel(RecordKey) { HotelName = ExpectedHotelName };
+        var jsonData = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(expectedHotel));
 
         // Mock GetResult for KV retrieval
         var mockGetResult = new Mock<IGetResult>();
         mockGetResult
-            .Setup(result => result.ContentAs<CouchbaseHotelModel>())
-            .Returns(new CouchbaseHotelModel(RecordKey)
-            {
-                HotelName = ExpectedHotelName
-            });
+            .Setup(result => result.ContentAs<byte[]>())
+            .Returns(jsonData);
 
         _mockCollection
             .Setup(collection => collection.GetAsync(It.Is<string>(key => key == RecordKey), It.IsAny<GetOptions>()))
@@ -720,20 +765,28 @@ public class CouchbaseVectorStoreRecordCollectionTests
                 It.IsAny<SearchOptions>()))
             .ReturnsAsync(mockSearchResult.Object);
 
+        // Mock Mapper
+        var mockMapper = new Mock<IVectorStoreRecordMapper<CouchbaseHotelModel, byte[]>>();
+        mockMapper
+            .Setup(m => m.MapFromStorageToDataModel(It.IsAny<byte[]>(), It.IsAny<StorageToDataModelMapperOptions>()))
+            .Returns<byte[], StorageToDataModelMapperOptions>((b, _) =>
+                JsonSerializer.Deserialize<CouchbaseHotelModel>(Encoding.UTF8.GetString(b))!);
+
         // Collection options
-        var collectionOptions = new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+        var collectionOptions = new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
         {
-            IndexName = "test-index"
+            IndexName = "test-index",
+            JsonDocumentCustomMapper = mockMapper.Object
         };
 
         // System Under Test (SUT)
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
             _mockScope.Object,
             "collection",
             collectionOptions);
 
         // Act
-        var actual = await sut.VectorizedSearchAsync(new[] { 1f, 2f, 3f });
+        var actual = await sut.VectorizedSearchAsync(new ReadOnlyMemory<float>(new float[] { 0.123f, 0.456f, -0.789f, 0.321f }));
         var results = await actual.Results.ToListAsync();
         var result = results.FirstOrDefault();
 
@@ -742,18 +795,29 @@ public class CouchbaseVectorStoreRecordCollectionTests
         Assert.Equal(RecordKey, result.Record.HotelId);
         Assert.Equal(ExpectedHotelName, result.Record.HotelName);
         Assert.Equal(ExpectedScore, result.Score);
+
+        // Verify GetAsync was called correctly
+        _mockCollection.Verify(
+            c => c.GetAsync(It.Is<string>(key => key == RecordKey), It.IsAny<GetOptions?>()),
+            Times.Once());
+
+        // Verify that the mapper was used
+        mockMapper.Verify(
+            m => m.MapFromStorageToDataModel(It.IsAny<byte[]>(), It.IsAny<StorageToDataModelMapperOptions>()),
+            Times.Once());
     }
+
     
     [Fact]
     public async Task VectorizedSearchWithUnsupportedVectorTypeThrowsExceptionAsync()
     {
         // Arrange
-        var collectionOptions = new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
+        var collectionOptions = new CouchbaseFtsVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
         {
             IndexName = "test-index"
         };
 
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
+        var sut = new CouchbaseFtsVectorStoreRecordCollection<CouchbaseHotelModel>(
             _mockScope.Object,
             "collection",
             collectionOptions);
@@ -761,27 +825,6 @@ public class CouchbaseVectorStoreRecordCollectionTests
         // Act & Assert
         await Assert.ThrowsAsync<NotSupportedException>(async () =>
             await (await sut.VectorizedSearchAsync(new List<double> { 1, 2, 3 })).Results.ToListAsync());
-    }
-
-    [Fact]
-    public async Task VectorizedSearchWithNonExistentVectorPropertyNameThrowsExceptionAsync()
-    {
-        // Arrange
-        var collectionOptions = new CouchbaseVectorStoreRecordCollectionOptions<CouchbaseHotelModel>
-        {
-            IndexName = "test-index"
-        };
-
-        var sut = new CouchbaseVectorStoreRecordCollection<CouchbaseHotelModel>(
-            _mockScope.Object,
-            "collection",
-            collectionOptions);
-
-        var searchOptions = new VectorSearchOptions { VectorPropertyName = "non-existent-property" };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await (await sut.VectorizedSearchAsync(new[] { 1f, 2f, 3f }, searchOptions)).Results.ToListAsync());
     }
 
     public static TheoryData<List<string>, string, bool> CollectionExistsData => new()

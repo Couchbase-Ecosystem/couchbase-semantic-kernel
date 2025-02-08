@@ -16,7 +16,7 @@ public sealed class CouchbaseVectorStoreTests
     public void GetCollectionWithNotSupportedKeyThrowsException()
     {
         // Arrange
-        var sut = new CouchbaseFtsVectorStore(this._mockScope.Object);
+        var sut = new CouchbaseVectorStore(this._mockScope.Object);
 
         // Act & Assert
         Assert.Throws<NotSupportedException>(() => sut.GetCollection<Guid, CouchbaseHotelModel>("collection"));
@@ -26,7 +26,7 @@ public sealed class CouchbaseVectorStoreTests
     public void GetCollectionWithSupportedKeyReturnsCollection()
     {
         // Arrange
-        var sut = new CouchbaseFtsVectorStore(this._mockScope.Object);
+        var sut = new CouchbaseVectorStore(this._mockScope.Object);
 
         // Act
         var collectionWithStringKey = sut.GetCollection<string, CouchbaseHotelModel>("collection1");
@@ -49,7 +49,7 @@ public sealed class CouchbaseVectorStoreTests
                 It.IsAny<VectorStoreRecordDefinition>()))
             .Returns(mockRecordCollection.Object);
     
-        var sut = new CouchbaseFtsVectorStore(
+        var sut = new CouchbaseVectorStore(
             this._mockScope.Object,
             new CouchbaseVectorStoreOptions { VectorStoreCollectionFactory = mockFactory.Object });
     
@@ -68,7 +68,7 @@ public sealed class CouchbaseVectorStoreTests
     public void GetCollectionWithoutFactoryReturnsDefaultCollection()
     {
         // Arrange
-        var sut = new CouchbaseFtsVectorStore(this._mockScope.Object);
+        var sut = new CouchbaseVectorStore(this._mockScope.Object);
     
         // Act
         var collection = sut.GetCollection<string, CouchbaseHotelModel>("collection");
@@ -101,7 +101,7 @@ public sealed class CouchbaseVectorStoreTests
         mockScope.Setup(s => s.Bucket).Returns(mockBucket.Object);
         mockScope.Setup(s => s.Name).Returns("scope-1");
 
-        var sut = new CouchbaseFtsVectorStore(mockScope.Object);
+        var sut = new CouchbaseVectorStore(mockScope.Object);
 
         // Act
         var actualCollectionNames = await sut.ListCollectionNamesAsync().ToListAsync();

@@ -11,6 +11,14 @@ public class CouchbaseHotelModel
     /// <summary>
     /// Initializes a new instance of the <see cref="CouchbaseHotelModel"/> class.
     /// </summary>
+    public CouchbaseHotelModel()
+    {
+        
+    }
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CouchbaseHotelModel"/> class.
+    /// </summary>
     /// <param name="hotelId">The unique hotel identifier.</param>
     public CouchbaseHotelModel(string hotelId)
     {
@@ -26,7 +34,7 @@ public class CouchbaseHotelModel
     /// <summary>
     /// The name of the hotel.
     /// </summary>
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreRecordData]
     public string? HotelName { get; set; }
 
     /// <summary>
@@ -44,7 +52,7 @@ public class CouchbaseHotelModel
     /// <summary>
     /// Indicates whether parking is included.
     /// </summary>
-    [VectorStoreRecordData(StoragePropertyName = "parking_is_included")]
+    [VectorStoreRecordData]
     public bool ParkingIncluded { get; set; }
 
     /// <summary>
@@ -64,5 +72,5 @@ public class CouchbaseHotelModel
     /// </summary>
     [JsonPropertyName("description_embedding")]
     [VectorStoreRecordVector(Dimensions: 4, DistanceFunction: DistanceFunction.DotProductSimilarity)]
-    public float[] DescriptionEmbedding { get; set; }
+    public ReadOnlyMemory<float> DescriptionEmbedding { get; set; }
 }
