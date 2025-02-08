@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
-        <Version>0.2.0</Version>
+        <Version>0.2.1</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase connector for Microsoft Semantic Kernel.</Description>
@@ -18,7 +18,7 @@
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>        
     </PropertyGroup>
-
+    
     <ItemGroup>
         <None Include="..\LICENSE.txt" Pack="true" PackagePath="" Visible="false" />
         <None Include="..\Assets\logo.png" Pack="true" PackagePath="" Visible="false" />
@@ -36,9 +36,9 @@
 
     <ItemGroup>
       <PackageReference Include="CouchbaseNetClient" Version="3.6.4" />
-      <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.0.0-preview.1.24523.1" />
-      <PackageReference Include="Microsoft.SemanticKernel" Version="1.29.0" />
-      <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.29.0" />
+      <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.0.0-preview.1.25078.1" />
+      <PackageReference Include="Microsoft.SemanticKernel" Version="1.36.1" />
+      <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.36.1" />
     </ItemGroup>
 
 </Project>
