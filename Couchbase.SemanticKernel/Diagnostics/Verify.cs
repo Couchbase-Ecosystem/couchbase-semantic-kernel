@@ -1,3 +1,5 @@
+﻿// Copyright (c) Microsoft. All rights reserved.
+
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -6,8 +8,7 @@ using Microsoft.SemanticKernel;
 
 namespace Couchbase.SemanticKernel.Diagnostics;
 
-#pragma warning disable IDE1006
-
+[ExcludeFromCodeCoverage]
 internal static partial class Verify
 {
 #if NET
@@ -192,5 +193,3 @@ internal static partial class Verify
     internal static void ThrowArgumentOutOfRangeException<T>(string? paramName, T actualValue, string message) =>
         throw new ArgumentOutOfRangeException(paramName, actualValue, message);
 }
-
-#pragma warning restore IDE1006

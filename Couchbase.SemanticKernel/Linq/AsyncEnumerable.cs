@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Couchbase.SemanticKernel.Diagnostics;
 
 using Microsoft.SemanticKernel;
+using Verify = Couchbase.SemanticKernel.Diagnostics.Verify;
 
 namespace Couchbase.SemanticKernel.Linq;
 
