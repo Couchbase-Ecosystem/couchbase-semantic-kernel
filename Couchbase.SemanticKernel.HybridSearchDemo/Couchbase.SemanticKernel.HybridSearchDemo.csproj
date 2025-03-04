@@ -9,10 +9,8 @@
 
     <ItemGroup>
         <PackageReference Include="CouchbaseConnector.SemanticKernel" Version="0.2.2" />
-        <PackageReference Include="CouchbaseNetClient" Version="3.6.4" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.36.1" />
-        <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.36.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+        <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.40.0" />
     </ItemGroup>
 
     <ItemGroup>
