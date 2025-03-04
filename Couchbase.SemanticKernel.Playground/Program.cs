@@ -58,9 +58,6 @@ internal sealed class Program
         
         kernel.Plugins.Add(textSearch.CreateWithGetTextSearchResults("SearchPlugin"));
         
-        // Crate collection and ingest a few demo records.
-        await vectorStoreCollection.CreateCollectionIfNotExistsAsync();
-        
         // Get the filepath of the hotels.csv file.
         var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName 
                           ?? throw new InvalidOperationException("Unable to determine the project root directory.");
@@ -152,3 +149,5 @@ public sealed record Hotel
     [JsonPropertyName("referenceLink")]
     public string? ReferenceLink { get; set; }
 }
+
+
