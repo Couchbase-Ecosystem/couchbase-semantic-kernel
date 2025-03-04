@@ -1,7 +1,7 @@
 {
   "type": "fulltext-index",
   "name": "travel-sample.inventory.hotelSampleIndex",
-  "uuid": "1324862aca727910",
+  "uuid": "4ea184d8c4eb3159",
   "sourceType": "gocbcore",
   "sourceName": "travel-sample",
   "sourceUUID": "185edb01ead5b281987a273b64dbcfa1",
@@ -59,19 +59,6 @@
                   "similarity": "dot_product",
                   "type": "vector",
                   "vector_index_optimized_for": "recall"
-                }
-              ]
-            },
-            "hotelId": {
-              "dynamic": false,
-              "enabled": true,
-              "fields": [
-                {
-                  "analyzer": "en",
-                  "index": true,
-                  "name": "hotelId",
-                  "store": true,
-                  "type": "text"
                 }
               ]
             },
