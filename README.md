@@ -259,7 +259,7 @@ public class Hotel
 Couchbase connector for Microsoft Semantic Kernel is licensed under the Apache 2.0 license.
 ---
 
-# 📢 Support Policy
+## 📢 Support Policy
 
 We truly appreciate your interest in this project!  
 This project is **community-maintained**, which means it's **not officially supported** by our support team.
