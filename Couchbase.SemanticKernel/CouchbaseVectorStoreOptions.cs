@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.AI;
 
 namespace Couchbase.SemanticKernel;
 
@@ -7,13 +8,28 @@ namespace Couchbase.SemanticKernel;
 /// </summary>
 public sealed class CouchbaseVectorStoreOptions
 {
-    /// <summary>
-    /// An optional factory to use for constructing <see cref="CouchbaseFtsVectorStoreRecordCollection{TRecord}"/> instances, if a custom record collection is required.
-    /// </summary>
-    public ICouchbaseVectorStoreRecordCollectionFactory? VectorStoreCollectionFactory { get; init; }
+    
+    internal static readonly CouchbaseVectorStoreOptions Default = new();
+    
+    public CouchbaseVectorStoreOptions()
+    {
+    }
+    
+    internal CouchbaseVectorStoreOptions(CouchbaseVectorStoreOptions? source)
+    {
+        EmbeddingGenerator = source?.EmbeddingGenerator;
+        IndexType = source?.IndexType ?? CouchbaseIndexType.Bhive;
+    }
     
     /// <summary>
-    /// Gets or sets the JSON serializer options to use when converting between the data model and the Couchbase document.
+    /// Gets or sets the default embedding generator to use when generating vectors embeddings with this vector store.
     /// </summary>
-    public JsonSerializerOptions? JsonSerializerOptions { get; init; }
+    public IEmbeddingGenerator? EmbeddingGenerator { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default index type to use for vector operations.
+    /// This determines whether collections will use Search (FTS), BHIVE, or COMPOSITE indexes by default.
+    /// Individual collections can override this setting.
+    /// </summary>
+    public CouchbaseIndexType IndexType { get; set; } = CouchbaseIndexType.Bhive;
 }
