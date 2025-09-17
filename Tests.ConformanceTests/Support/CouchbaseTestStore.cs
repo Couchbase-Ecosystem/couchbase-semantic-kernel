@@ -23,9 +23,9 @@ internal sealed class CouchbaseTestStore : TestStore
     private IBucket? _bucket;
     private IScope? _scope;
 
-    private const string ConnectionString = "couchbases://cb.1-0nc9a4iqbyiqy7.cloud.couchbase.com";
-    private const string Username = "Admin";
-    private const string Password = "Admin@123";
+    private const string ConnectionString = "";
+    private const string Username = "";
+    private const string Password = "";
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
     
