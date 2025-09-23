@@ -49,6 +49,11 @@ jobs:
       - name: .NET Restore
         run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }}
 
+      - name: Install latest .NET Format tool
+        shell: bash
+        run: |
+          dotnet tool install -g dotnet-format --version "9.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet9/nuget/v3/index.json
+
 
       - name: .NET Lint
         uses: zyactions/dotnet-lint@v1
