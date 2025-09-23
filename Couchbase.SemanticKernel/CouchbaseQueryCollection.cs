@@ -1,15 +1,10 @@
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
-using Couchbase.Core.IO.Transcoders;
 using Couchbase.KeyValue;
-using Couchbase.Query;
-using Couchbase.SemanticKernel.Diagnostics;
 using Microsoft.Extensions.VectorData;
-using Microsoft.Extensions.VectorData.ProviderServices;
+using Newtonsoft.Json.Linq;
 
 namespace Couchbase.SemanticKernel;
 
@@ -142,7 +137,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
 
             try
             {
-                await _scope.Bucket.Cluster.QueryAsync<dynamic>(createIndexQuery).ConfigureAwait(false);
+                await _scope.QueryAsync<dynamic>(createIndexQuery).ConfigureAwait(false);
             }
             catch (CouchbaseException ex) when (ex.Message.Contains("already exists"))
             {
@@ -166,8 +161,6 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
 
         var searchVector = await GetSearchVectorAsync(searchValue, vectorProperty, cancellationToken).ConfigureAwait(false);
         
-        var bucketName = _scope.Bucket.Name;
-        var scopeName = _scope.Name;
         var collectionName = Name;
         var vectorField = vectorProperty.StorageName;
 
@@ -175,47 +168,71 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         var similarityMetric = CouchbaseQueryCollectionCreateMapping.MapSimilarityMetric(_queryOptions.SimilarityMetric);
         var formattedVector = CouchbaseQueryCollectionCreateMapping.FormatVectorForSql(searchVector.ToArray().AsMemory());
         
+        // Build field list for explicit selection (like Python implementation)
+        var fields = new List<string>();
+        
+        // Add all data properties (escaped with backticks for reserved words)
+        fields.AddRange(_model.DataProperties.Select(p => $"`{p.StorageName}`"));
+        
+        // Add vector properties if requested
+        if (options?.IncludeVectors ?? false)
+        {
+            fields.AddRange(_model.VectorProperties.Select(p => $"`{p.StorageName}`"));
+        }
+        
+        var fieldsString = string.Join(", ", fields);
+        
         // Build the SQL query for pure vector search (no WHERE clause)
-        var selectClause = $"SELECT b.*, META(b).id AS _id, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance";
-        var fromClause = $"FROM `{bucketName}`.`{scopeName}`.`{collectionName}` b";
-        var orderByClause = $"ORDER BY _distance ASC";
-        var limitClause = $"LIMIT {top} OFFSET {options?.Skip ?? 0}";
-
-        var sqlQuery = $"{selectClause} {fromClause} {orderByClause} {limitClause}";
+        var sqlQuery = $@"
+            SELECT META().id AS _id, {fieldsString}, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance
+            FROM `{collectionName}`
+            ORDER BY _distance ASC
+            LIMIT {top} OFFSET {options?.Skip ?? 0}";
 
         var queryResult = await RunOperationAsync("VectorSearch", () =>
-            _scope.Bucket.Cluster.QueryAsync<dynamic>(sqlQuery)).ConfigureAwait(false);
+            _scope.QueryAsync<dynamic>(sqlQuery)).ConfigureAwait(false);
 
         await foreach (var row in queryResult.Rows)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Extract document content, ID, and distance from the query result
-            var rowDict = row as IDictionary<string, object?> ?? 
-                          throw new InvalidOperationException("Query result row is not a dictionary");
-            
-            if (!rowDict.TryGetValue("_id", out var idObj) || idObj?.ToString() is not string docId || string.IsNullOrEmpty(docId))
+            // Handle JObject instances returned by Couchbase QueryAsync
+            if (row is not JObject jObject)
+            {
+                throw new InvalidOperationException($"Query result row is not a JObject.");
+            }
+
+            // Extract document ID and distance (should be flat structure now with explicit field selection)
+            var docId = jObject["_id"]?.Value<string>();
+            if (string.IsNullOrEmpty(docId))
             {
                 continue;
             }
 
-            var distance = 0.0;
-            if (rowDict.TryGetValue("_distance", out var distanceObj) && distanceObj != null)
-            {
-                distance = Convert.ToDouble(distanceObj);
-            }
+            var distance = jObject["_distance"]?.Value<double>() ?? 0.0;
 
-            // Remove metadata fields to get clean document content
-            var cleanRow = rowDict.Where(kvp => !kvp.Key.StartsWith("_")).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            // Create clean document content (remove metadata fields starting with _)
+            var documentContent = new JObject();
+            foreach (var property in jObject.Properties())
+            {
+                if (!property.Name.StartsWith("_"))
+                {
+                    documentContent[property.Name] = property.Value;
+                }
+            }
             
-            // Convert to JSON and then to TRecord
-            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(cleanRow);
+            // Add the document key back into the content (since Couchbase stores key outside document)
+            // The mapper expects the key field to be present in the document for proper mapping
+            documentContent[_model.KeyProperty.StorageName] = docId;
+            
+            // Convert JObject to System.Text.Json byte array for the mapper
+            var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
+            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
             var record = _mapper.MapFromStorageToDataModel(jsonBytes, options?.IncludeVectors ?? false);
 
-            // Convert distance to score (lower distance = higher score)
-            var score = distance > 0 ? 1.0 / (1.0 + distance) : 1.0;
-
-            yield return new VectorSearchResult<TRecord>(record, score);
+            // Use distance directly as score (like Python implementation and SearchCollection pattern)
+            // Note: Lower distance values indicate better matches
+            yield return new VectorSearchResult<TRecord>(record, distance);
         }
     }
 
@@ -243,38 +260,66 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             yield break;
         }
 
-        var bucketName = _scope.Bucket.Name;
-        var scopeName = _scope.Name;
         var collectionName = Name;
         
+        // Build field list for explicit selection (like Python implementation)
+        var fields = new List<string>();
+        
+        // Add all data properties
+        fields.AddRange(_model.DataProperties.Select(p => p.StorageName));
+        
+        // Add vector properties if requested
+        if (options?.IncludeVectors ?? false)
+        {
+            fields.AddRange(_model.VectorProperties.Select(p => p.StorageName));
+        }
+        
+        var fieldsString = string.Join(", ", fields);
+        
         var sqlQuery = $@"
-            SELECT b.*, META(b).id AS _id
-            FROM `{bucketName}`.`{scopeName}`.`{collectionName}` b
+            SELECT META().id AS _id, {fieldsString}
+            FROM `{collectionName}`
             WHERE {whereClause}
             LIMIT {top}
             OFFSET {options?.Skip ?? 0}";
 
         var queryResult = await RunOperationAsync("FilteredGet", () =>
-            _scope.Bucket.Cluster.QueryAsync<dynamic>(sqlQuery)).ConfigureAwait(false);
+            _scope.QueryAsync<dynamic>(sqlQuery)).ConfigureAwait(false);
 
         await foreach (var row in queryResult.Rows)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Extract document content and ID from the query result
-            var rowDict = row as IDictionary<string, object?> ?? 
-                          throw new InvalidOperationException("Query result row is not a dictionary");
-            
-            if (!rowDict.TryGetValue("_id", out var idObj) || idObj?.ToString() is not string docId || string.IsNullOrEmpty(docId))
+            // Handle JObject instances returned by Couchbase QueryAsync
+            if (row is not JObject jObject)
+            {
+                throw new InvalidOperationException($"Query result row is not a JObject");
+            }
+
+            // Extract document ID (should be flat structure now with explicit field selection)
+            var docId = jObject["_id"]?.Value<string>();
+            if (string.IsNullOrEmpty(docId))
             {
                 continue;
             }
 
-            // Remove metadata fields to get clean document content
-            var cleanRow = rowDict.Where(kvp => !kvp.Key.StartsWith("_")).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            // Create clean document content (remove metadata fields starting with _)
+            var documentContent = new JObject();
+            foreach (var property in jObject.Properties())
+            {
+                if (!property.Name.StartsWith("_"))
+                {
+                    documentContent[property.Name] = property.Value;
+                }
+            }
             
-            // Convert to JSON and then to TRecord
-            var jsonBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(cleanRow);
+            // Add the document key back into the content (since Couchbase stores key outside document)
+            // The mapper expects the key field to be present in the document for proper mapping
+            documentContent[_model.KeyProperty.StorageName] = docId;
+            
+            // Convert JObject to System.Text.Json byte array for the mapper
+            var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
+            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
             var record = _mapper.MapFromStorageToDataModel(jsonBytes, options?.IncludeVectors ?? false);
 
             yield return record;

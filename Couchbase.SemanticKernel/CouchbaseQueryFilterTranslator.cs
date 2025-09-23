@@ -92,11 +92,11 @@ internal sealed class CouchbaseQueryFilterTranslator
     {
         if (value is null)
         {
-            return negated ? $"(b.{storageName} IS NOT NULL)" : $"(b.{storageName} IS NULL)";
+            return negated ? $"({storageName} IS NOT NULL)" : $"({storageName} IS NULL)";
         }
         return negated
-            ? $"(b.{storageName} != {ToSqlLiteral(value)})"
-            : $"(b.{storageName} = {ToSqlLiteral(value)})";
+            ? $"({storageName} != {ToSqlLiteral(value)})"
+            : $"({storageName} = {ToSqlLiteral(value)})";
     }
 
     private string TranslateComparison(BinaryExpression comparison)
@@ -115,7 +115,7 @@ internal sealed class CouchbaseQueryFilterTranslator
             _ => throw new NotSupportedException($"Unsupported comparison: {comparison.NodeType}")
         };
 
-        return $"(b.{property.StorageName} {op} {ToSqlLiteral(constant)})";
+        return $"({property.StorageName} {op} {ToSqlLiteral(constant)})";
     }
 
     private string TranslateMethodCall(MethodCallExpression methodCall)
@@ -146,14 +146,14 @@ internal sealed class CouchbaseQueryFilterTranslator
         if (TryExtractConstantEnumerable(source, out var elements) && TryBindProperty(item, out var property))
         {
             var literals = elements.Select(ToSqlLiteral).ToArray();
-            return $"(b.{property.StorageName} IN [{string.Join(", ", literals)}])";
+            return $"({property.StorageName} IN [{string.Join(", ", literals)}])";
         }
 
         // Or support property IN inline array when property is left and constant enumerable is right
         if (TryBindProperty(source, out property) && TryExtractConstantEnumerable(item, out elements))
         {
             var literals = elements.Select(ToSqlLiteral).ToArray();
-            return $"(b.{property.StorageName} IN [{string.Join(", ", literals)}])";
+            return $"({property.StorageName} IN [{string.Join(", ", literals)}])";
         }
 
         throw new NotSupportedException("Unsupported Contains usage in SQL filter.");

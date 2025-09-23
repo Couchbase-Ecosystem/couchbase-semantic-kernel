@@ -23,9 +23,9 @@ internal sealed class CouchbaseTestStore : TestStore
     private IBucket? _bucket;
     private IScope? _scope;
 
-    private const string ConnectionString = "";
-    private const string Username = "";
-    private const string Password = "";
+    private const string ConnectionString = "couchbase://localhost";
+    private const string Username = "Administrator";
+    private const string Password = "password";
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
     
@@ -38,22 +38,6 @@ internal sealed class CouchbaseTestStore : TestStore
 
     public CouchbaseVectorStore GetVectorStore(CouchbaseVectorStoreOptions? options = null)
         => new(Scope, options ?? new CouchbaseVectorStoreOptions());
-
-    /// <summary>
-    /// Gets a test collection with IndexName configured for search operations.
-    /// This ensures all test collections can perform vector and hybrid search.
-    /// </summary>
-    public VectorStoreCollection<TKey, TRecord> GetTestCollection<TKey, TRecord>(string collectionName)
-        where TKey : notnull
-        where TRecord : class
-    {
-        var options = new CouchbaseCollectionOptions
-        {
-            IndexName = TestIndexName
-        };
-        
-        return new CouchbaseCollection<TKey, TRecord>(Scope, collectionName, options);
-    }
 
     private CouchbaseTestStore()
     {

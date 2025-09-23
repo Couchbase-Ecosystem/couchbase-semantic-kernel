@@ -89,7 +89,6 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
         _collectionMetadata = new()
         {
             VectorStoreSystemName = CouchbaseConstants.VectorStoreSystemName,
-            VectorStoreName = _scope.Bucket.Name,
             CollectionName = name
         };
     }

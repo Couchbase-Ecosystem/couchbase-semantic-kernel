@@ -9,6 +9,7 @@
         <RootNamespace>Couchbase.ConformanceTests</RootNamespace>
         <NoWarn>$(NoWarn);MEVD9000</NoWarn> <!-- Microsoft.Extensions.VectorData experimental user-facing APIs -->
         <NoWarn>$(NoWarn);MEVD9001</NoWarn> <!-- Microsoft.Extensions.VectorData experimental provider-facing APIs -->
+        <NoWarn>$(NoWarn);SKEXP0020</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

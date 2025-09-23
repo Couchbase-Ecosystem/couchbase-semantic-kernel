@@ -134,7 +134,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
         
         // Construct the final search request
         var searchRequest = new SearchRequest(
-            SearchQuery: filter,
+            // SearchQuery: filter,
             VectorSearch: VectorSearch.Create(vectorQuery)
         );
 
