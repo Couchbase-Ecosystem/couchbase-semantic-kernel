@@ -23,7 +23,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
 {
     /// <summary>The default options for vector search.</summary>
     protected static readonly VectorSearchOptions<TRecord> DefaultVectorSearchOptions = new();
-    
+
     /// <summary>The default options for hybrid vector search.</summary>
     protected static readonly HybridSearchOptions<TRecord> DefaultKeywordVectorizedHybridSearchOptions = new();
 
@@ -32,13 +32,13 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
 
     /// <summary>The Couchbase scope to use for storing and retrieving records.</summary>
     protected readonly IScope _scope;
-    
+
     /// <summary>The Couchbase collection to use for storing and retrieving records.</summary>
     protected readonly ICouchbaseCollection _collection;
-    
+
     /// <summary>Optional configuration options for this class.</summary>
     private readonly ICouchbaseCollectionOptions _options;
-    
+
     /// <summary>The model for this collection.</summary>
     protected readonly CollectionModel _model;
 
@@ -47,7 +47,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
 
     /// <inheritdoc />
     public override string Name { get; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CouchbaseCollectionBase{TKey,TRecord}"/> class.
     /// </summary>
@@ -92,7 +92,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             CollectionName = name
         };
     }
-    
+
     /// <inheritdoc />
     public override Task<bool> CollectionExistsAsync(CancellationToken cancellationToken = default)
     {
@@ -146,7 +146,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     protected abstract Task EnsureIndexExistsAsync(CancellationToken cancellationToken);
-    
+
     /// <inheritdoc />
     public override async Task EnsureCollectionDeletedAsync(CancellationToken cancellationToken = default)
     {
@@ -158,7 +158,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
                 .ConfigureAwait(false);
         }).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc />
     public override async Task<TRecord?> GetAsync(TKey key, RecordRetrievalOptions? options = null, CancellationToken cancellationToken = default)
     {
@@ -178,7 +178,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             {
                 try
                 {
-                    var getResult = await _collection.GetAsync(keyString, 
+                    var getResult = await _collection.GetAsync(keyString,
                         getOptions => getOptions.Transcoder(new RawJsonTranscoder())).ConfigureAwait(false);
                     return getResult.ContentAs<byte[]>();
                 }
@@ -200,7 +200,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             return default;
         }
     }
-    
+
     /// <inheritdoc />
     public override async IAsyncEnumerable<TRecord> GetAsync(
         IEnumerable<TKey> keys,
@@ -226,7 +226,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             }
         }
     }
-    
+
     /// <inheritdoc />
     public override async Task DeleteAsync(TKey key, CancellationToken cancellationToken = default)
     {
@@ -238,7 +238,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             await _collection.RemoveAsync(keyString).ConfigureAwait(false);
         }).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc />
     public override async Task DeleteAsync(IEnumerable<TKey> keys, CancellationToken cancellationToken = default)
     {
@@ -249,7 +249,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             await DeleteAsync(key, cancellationToken).ConfigureAwait(false);
         }
     }
-    
+
     /// <inheritdoc />
     public override async Task UpsertAsync(TRecord record, CancellationToken cancellationToken = default)
     {
@@ -403,7 +403,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             operationName,
             operation);
     }
-    
+
     /// <summary>
     /// Shared helper method for running operations with error handling and return value.
     /// </summary>
@@ -414,4 +414,4 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
             operationName,
             operation);
     }
-} 
+}

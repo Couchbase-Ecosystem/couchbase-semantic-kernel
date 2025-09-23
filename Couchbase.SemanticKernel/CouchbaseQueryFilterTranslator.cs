@@ -243,4 +243,4 @@ internal sealed class CouchbaseQueryFilterTranslator
 
         return true;
     }
-} 
+}

@@ -8,19 +8,19 @@ namespace Couchbase.SemanticKernel;
 /// </summary>
 public sealed class CouchbaseVectorStoreOptions
 {
-    
+
     internal static readonly CouchbaseVectorStoreOptions Default = new();
-    
+
     public CouchbaseVectorStoreOptions()
     {
     }
-    
+
     internal CouchbaseVectorStoreOptions(CouchbaseVectorStoreOptions? source)
     {
         EmbeddingGenerator = source?.EmbeddingGenerator;
         IndexType = source?.IndexType ?? CouchbaseIndexType.Bhive;
     }
-    
+
     /// <summary>
     /// Gets or sets the default embedding generator to use when generating vectors embeddings with this vector store.
     /// </summary>

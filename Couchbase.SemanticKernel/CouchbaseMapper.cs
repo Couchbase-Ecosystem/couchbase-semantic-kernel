@@ -148,4 +148,4 @@ internal sealed class CouchbaseMapper<TKey, TRecord> :
         return JsonSerializer.SerializeToNode(obj, options)?.AsObject()
             ?? throw new InvalidOperationException("Failed to serialize object to JsonObject.");
     }
-} 
+}

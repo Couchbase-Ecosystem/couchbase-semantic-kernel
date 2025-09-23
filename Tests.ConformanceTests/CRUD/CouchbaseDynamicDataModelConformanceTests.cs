@@ -9,4 +9,4 @@ namespace Couchbase.ConformanceTests.CRUD;
 public class CouchbaseDynamicDataModelConformanceTests(CouchbaseDynamicDataModelFixture fixture)
     : DynamicDataModelConformanceTests<object>(fixture), IClassFixture<CouchbaseDynamicDataModelFixture>
 {
-} 
+}

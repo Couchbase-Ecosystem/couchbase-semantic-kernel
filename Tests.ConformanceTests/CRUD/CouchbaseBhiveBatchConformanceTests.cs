@@ -22,7 +22,7 @@ public class CouchbaseBhiveBatchConformanceTests(CouchbaseBhiveBatchConformanceT
         {
             var testStore = (CouchbaseTestStore)TestStore;
             var vectorStore = testStore.GetVectorStore(new CouchbaseVectorStoreOptions { IndexType = CouchbaseIndexType.Bhive });
-            
+
             var queryOptions = new CouchbaseQueryCollectionOptions
             {
                 IndexName = $"{CollectionName}_bhive_index",
@@ -30,7 +30,7 @@ public class CouchbaseBhiveBatchConformanceTests(CouchbaseBhiveBatchConformanceT
                 SimilarityMetric = "COSINE",
                 QuantizationSettings = "IVF,SQ8"
             };
-            
+
             return vectorStore.GetCollection<string, VectorData.ConformanceTests.Models.SimpleRecord<string>>(CollectionName, queryOptions);
         }
     }

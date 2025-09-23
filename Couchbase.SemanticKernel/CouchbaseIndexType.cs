@@ -25,4 +25,4 @@ public enum CouchbaseIndexType
     /// Best for: Complex SQL filtering, mixed workloads.
     /// </summary>
     Composite
-} 
+}

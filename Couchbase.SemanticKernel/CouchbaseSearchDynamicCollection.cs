@@ -44,8 +44,8 @@ public sealed class CouchbaseSearchDynamicCollection : CouchbaseSearchCollection
 
         // Create a new options instance with the dynamic model
         var dynamicOptions = new CouchbaseSearchCollectionOptions(options);
-        
+
         // The collection will use the dynamic model builder through the model creation process
         return dynamicOptions;
     }
-} 
+}

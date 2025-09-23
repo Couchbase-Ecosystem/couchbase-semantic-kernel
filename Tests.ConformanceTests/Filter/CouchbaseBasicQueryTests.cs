@@ -16,4 +16,4 @@ public class CouchbaseBasicQueryTests(CouchbaseBasicQueryTests.Fixture fixture)
 
         public override string CollectionName => "query_tests";
     }
-} 
+}

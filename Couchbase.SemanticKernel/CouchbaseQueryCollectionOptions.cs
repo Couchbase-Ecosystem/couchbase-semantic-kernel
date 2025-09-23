@@ -101,4 +101,4 @@ public class CouchbaseQueryCollectionOptions : ICouchbaseCollectionOptions
             IndexWhereClause = other.IndexWhereClause;
         }
     }
-} 
+}

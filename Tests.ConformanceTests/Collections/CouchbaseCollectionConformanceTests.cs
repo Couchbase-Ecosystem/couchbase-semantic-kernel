@@ -14,7 +14,7 @@ public class CouchbaseCollectionConformanceTests(CouchbaseVectorStoreFixture fix
 {
     //TODO: See if we can make these tests work differently
     public override string CollectionName => "collection_tests";
-    
+
     /// <summary>
     /// Override to use Couchbase query collection with BHIVE index for collection operations.
     /// </summary>
@@ -22,7 +22,7 @@ public class CouchbaseCollectionConformanceTests(CouchbaseVectorStoreFixture fix
     {
         var testStore = (CouchbaseTestStore)fixture.TestStore;
         var vectorStore = testStore.GetVectorStore(new CouchbaseVectorStoreOptions { IndexType = CouchbaseIndexType.Bhive });
-        
+
         var queryOptions = new CouchbaseQueryCollectionOptions
         {
             IndexName = $"{CollectionName}_bhive_index",
@@ -30,7 +30,7 @@ public class CouchbaseCollectionConformanceTests(CouchbaseVectorStoreFixture fix
             SimilarityMetric = "COSINE",
             QuantizationSettings = "IVF,SQ8" // BHIVE supports quantization
         };
-        
+
         return vectorStore.GetCollection<string, SimpleRecord<string>>(CollectionName, queryOptions);
     }
-} 
+}

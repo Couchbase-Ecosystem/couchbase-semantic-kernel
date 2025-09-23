@@ -29,4 +29,4 @@ public class CouchbaseKeywordVectorizedHybridSearchTests(
         public override string CollectionName => "keyword_hybrid_search" + GetUniqueCollectionName();
         protected override string IndexKind => Microsoft.Extensions.VectorData.IndexKind.Hnsw;
     }
-} 
+}

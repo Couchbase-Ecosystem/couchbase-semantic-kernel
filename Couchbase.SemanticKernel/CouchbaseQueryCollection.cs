@@ -65,7 +65,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
                     "Supported types are: BHIVE, COMPOSITE");
         }
     }
-    
+
     /// <summary>
     /// Creates a vector index (BHIVE or COMPOSITE) if it doesn't already exist.
     /// </summary>
@@ -74,7 +74,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
     private async Task CreateVectorIndexIfNotExistsAsync(CouchbaseIndexType indexType, CancellationToken cancellationToken)
     {
         var operationName = indexType == CouchbaseIndexType.Bhive ? "CreateBhiveIndex" : "CreateCompositeIndex";
-        
+
         await RunOperationAsync(operationName, async () =>
         {
             var vectorProperty = _model.VectorProperties.FirstOrDefault();
@@ -102,13 +102,13 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
 
             // Build the appropriate query based on index type
             string createIndexQuery;
-            
+
             if (indexType == CouchbaseIndexType.Bhive)
             {
                 // BHIVE: CREATE VECTOR INDEX with INCLUDE clause
                 var includeFields = CouchbaseQueryCollectionCreateMapping.GetBhiveIncludeFields(_model);
                 var includeClause = includeFields.Any() ? $"INCLUDE ({string.Join(", ", includeFields)})" : "";
-                
+
                 createIndexQuery = $@"
                     CREATE VECTOR INDEX `{indexName}` 
                     ON `{bucketName}`.`{scopeName}`.`{collectionName}` ({vectorField} VECTOR) 
@@ -120,7 +120,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             {
                 // COMPOSITE: CREATE INDEX with vector + scalar fields
                 var indexKeys = new List<string> { $"{vectorField} VECTOR" };
-                
+
                 // Add scalar fields for composite indexing (enables pre-filtering)
                 var scalarFields = CouchbaseQueryCollectionCreateMapping.GetCompositeIndexFields(_model, _queryOptions.CompositeScalarKeys);
                 if (scalarFields.Any())
@@ -160,28 +160,28 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         }
 
         var searchVector = await GetSearchVectorAsync(searchValue, vectorProperty, cancellationToken).ConfigureAwait(false);
-        
+
         var collectionName = Name;
         var vectorField = vectorProperty.StorageName;
 
         // Get the similarity metric for the ANN_DISTANCE function
         var similarityMetric = CouchbaseQueryCollectionCreateMapping.MapSimilarityMetric(_queryOptions.SimilarityMetric);
         var formattedVector = CouchbaseQueryCollectionCreateMapping.FormatVectorForSql(searchVector.ToArray().AsMemory());
-        
+
         // Build field list for explicit selection (like Python implementation)
         var fields = new List<string>();
-        
+
         // Add all data properties (escaped with backticks for reserved words)
         fields.AddRange(_model.DataProperties.Select(p => $"`{p.StorageName}`"));
-        
+
         // Add vector properties if requested
         if (options?.IncludeVectors ?? false)
         {
             fields.AddRange(_model.VectorProperties.Select(p => $"`{p.StorageName}`"));
         }
-        
+
         var fieldsString = string.Join(", ", fields);
-        
+
         // Build the SQL query for pure vector search (no WHERE clause)
         var sqlQuery = $@"
             SELECT META().id AS _id, {fieldsString}, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance
@@ -220,11 +220,11 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
                     documentContent[property.Name] = property.Value;
                 }
             }
-            
+
             // Add the document key back into the content (since Couchbase stores key outside document)
             // The mapper expects the key field to be present in the document for proper mapping
             documentContent[_model.KeyProperty.StorageName] = docId;
-            
+
             // Convert JObject to System.Text.Json byte array for the mapper
             var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
             var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
@@ -261,21 +261,21 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         }
 
         var collectionName = Name;
-        
+
         // Build field list for explicit selection (like Python implementation)
         var fields = new List<string>();
-        
+
         // Add all data properties
         fields.AddRange(_model.DataProperties.Select(p => p.StorageName));
-        
+
         // Add vector properties if requested
         if (options?.IncludeVectors ?? false)
         {
             fields.AddRange(_model.VectorProperties.Select(p => p.StorageName));
         }
-        
+
         var fieldsString = string.Join(", ", fields);
-        
+
         var sqlQuery = $@"
             SELECT META().id AS _id, {fieldsString}
             FROM `{collectionName}`
@@ -312,11 +312,11 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
                     documentContent[property.Name] = property.Value;
                 }
             }
-            
+
             // Add the document key back into the content (since Couchbase stores key outside document)
             // The mapper expects the key field to be present in the document for proper mapping
             documentContent[_model.KeyProperty.StorageName] = docId;
-            
+
             // Convert JObject to System.Text.Json byte array for the mapper
             var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
             var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
@@ -325,4 +325,4 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             yield return record;
         }
     }
-} 
+}

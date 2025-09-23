@@ -241,4 +241,4 @@ public static class CouchbaseServiceCollectionExtensions
             ? options // There is nothing to change.
             : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
     }
-} 
+}

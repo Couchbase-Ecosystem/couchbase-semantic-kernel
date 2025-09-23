@@ -22,7 +22,7 @@ public class CouchbaseCompositeDynamicDataModelConformanceTests(CouchbaseComposi
         {
             var testStore = (CouchbaseTestStore)TestStore;
             var vectorStore = testStore.GetVectorStore(new CouchbaseVectorStoreOptions { IndexType = CouchbaseIndexType.Composite });
-            
+
             var queryOptions = new CouchbaseQueryCollectionOptions
             {
                 IndexName = $"{CollectionName}_composite_index",
@@ -30,7 +30,7 @@ public class CouchbaseCompositeDynamicDataModelConformanceTests(CouchbaseComposi
                 SimilarityMetric = "COSINE",
                 QuantizationSettings = null // No quantization for composite
             };
-            
+
             return vectorStore.GetQueryDynamicCollection(CollectionName, CreateRecordDefinition(), queryOptions);
         }
     }

@@ -32,10 +32,6 @@ jobs:
           global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
           problem-matcher: false
 
-      - name: Install latest .NET Format tool
-        shell: bash
-        run: |
-          dotnet tool install -g dotnet-format --version "8.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json
 
       - name: Get Changed Files
         id: changed-files
@@ -53,14 +49,14 @@ jobs:
       - name: .NET Restore
         run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }}
 
-      - name: .NET Format Check
-        run: |
-          if [ -n "${{ steps.changed-files.outputs.all_changed_files }}" ]; then
-            echo "Checking format for changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
-            dotnet format ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }} --verify-no-changes --verbosity diagnostic --include ${{ steps.changed-files.outputs.all_changed_files }}
-          else
-            echo "No files changed, skipping format check"
-          fi
+
+      - name: .NET Lint
+        uses: zyactions/dotnet-lint@v1
+        with:
+          working-directory: ${{ inputs.path }}
+          # This list is empty for the initial commit. NET Lint will lint all files in this case.
+          include: ${{ steps.changed-files.outputs.all_changed_files }}
+          use-standalone-tool: true
 
   test:
     name: Run Tests
@@ -86,7 +82,7 @@ jobs:
           "solution": {
             "path": "${{ steps.find.outputs.solution }}",
             "projects": [
-              "test/VectorData.UnitTests/VectorData.UnitTests.csproj"
+              "Tests.ConformanceTests\\Tests.ConformanceTests.csproj"
             ]
           }
         }

@@ -40,7 +40,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
                 IndexName = CouchbaseTestStore.TestIndexName,
                 Definition = recordDefinition
             };
-            
+
             return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
         }
 
@@ -84,7 +84,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
                 IndexName = CouchbaseTestStore.TestIndexName,
                 Definition = recordDefinition
             };
-            
+
             return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
         }
 
@@ -102,4 +102,4 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
                 .AddCouchbaseSearchCollection<string, RecordWithAttributes>(this.CollectionName)
         ];
     }
-} 
+}

@@ -28,7 +28,7 @@ internal sealed class CouchbaseTestStore : TestStore
     private const string Password = "password";
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
-    
+
     // FTS Index name for tests - MUST exist before running tests
     public const string TestIndexName = "hotelIndex";
 
@@ -51,7 +51,7 @@ internal sealed class CouchbaseTestStore : TestStore
         {
             // Connect to your local Couchbase cluster using static method
             _cluster = await Couchbase.Cluster.ConnectAsync(ConnectionString, Username, Password);
-            
+
             // Try to get the bucket (create if it doesn't exist)
             try
             {
@@ -64,7 +64,7 @@ internal sealed class CouchbaseTestStore : TestStore
                 throw new InvalidOperationException(
                     $"Bucket '{BucketName}' not found. Please create it manually in Couchbase Web Console.");
             }
-            
+
             _scope = _bucket.Scope(ScopeName);
 
             // Create the default vector store
@@ -82,4 +82,4 @@ internal sealed class CouchbaseTestStore : TestStore
         _cluster?.Dispose();
         await Task.CompletedTask;
     }
-} 
+}

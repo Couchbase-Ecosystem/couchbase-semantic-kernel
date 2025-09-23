@@ -100,8 +100,8 @@ public class CouchbaseDependencyInjectionTests
 
         Assert.Throws<ArgumentException>(() => services.AddCouchbaseVectorStore(connectionString: null!, "user", "pass", "bucket", "scope"));
         Assert.Throws<ArgumentException>(() => services.AddKeyedCouchbaseVectorStore(serviceKey: "notNull", connectionString: null!, "user", "pass", "bucket", "scope"));
-        
+
         // Note: AddCouchbaseSearchCollection and AddCouchbaseQueryCollection don't have connection string overloads
         // They use IScope from DI container, so we test the vector store methods instead
     }
-} 
+}

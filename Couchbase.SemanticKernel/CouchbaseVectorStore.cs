@@ -218,8 +218,8 @@ public class CouchbaseVectorStore : VectorStore
     /// <returns>A query-based dynamic collection.</returns>
     [Experimental("MEVD9001")]
     public VectorStoreCollection<object, Dictionary<string, object?>> GetQueryDynamicCollection(
-        string name, 
-        VectorStoreCollectionDefinition definition, 
+        string name,
+        VectorStoreCollectionDefinition definition,
         CouchbaseQueryCollectionOptions? options = null)
     {
         var collectionOptions = options ?? new CouchbaseQueryCollectionOptions();

@@ -41,7 +41,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
     {
         // Store the search-specific options
         _searchOptions = options ?? new CouchbaseSearchCollectionOptions();
-        
+
         // Store the vector index name as a field
         _vectorIndexName = _searchOptions.IndexName ?? string.Empty;
     }
@@ -65,11 +65,11 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
         await RunOperationAsync("ValidateFtsIndex", async () =>
         {
             var searchIndexManager = _scope.Bucket.Cluster.SearchIndexes;
-            
+
             try
             {
                 var index = await searchIndexManager.GetIndexAsync(_vectorIndexName).ConfigureAwait(false);
-                
+
                 // Additional validation: ensure index is not in error state
                 if (index == null)
                 {
@@ -116,8 +116,8 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
         var filter = options switch
         {
             { OldFilter: not null, Filter: not null } => throw new ArgumentException($"Either '{nameof(options.Filter)}' or '{nameof(options.OldFilter)}' can be specified, but not both."),
-            { OldFilter: {} legacyFilter } => CouchbaseCollectionSearchMapping.BuildFromLegacyFilter(legacyFilter, _model),
-            { Filter: {} newFilter } => new CouchbaseSearchFilterTranslator().Translate(newFilter, _model),
+            { OldFilter: { } legacyFilter } => CouchbaseCollectionSearchMapping.BuildFromLegacyFilter(legacyFilter, _model),
+            { Filter: { } newFilter } => new CouchbaseSearchFilterTranslator().Translate(newFilter, _model),
             _ => null
         };
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -131,7 +131,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
                 NumCandidates = _searchOptions.NumCandidates,
                 Boost = _searchOptions.Boost
             });
-        
+
         // Construct the final search request
         var searchRequest = new SearchRequest(
             // SearchQuery: filter,
@@ -146,7 +146,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
                 "Configure IndexName in CouchbaseSearchCollectionOptions.");
         }
 
-        var searchResult = await RunOperationAsync("VectorSearch", () => 
+        var searchResult = await RunOperationAsync("VectorSearch", () =>
             _scope.SearchAsync(
                 _vectorIndexName,
                 searchRequest,
@@ -154,7 +154,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
                     .Limit(top)
                     .Skip(options.Skip)
             )).ConfigureAwait(false);
-        
+
         // Map the search results to the target data model (TRecord)
         await foreach (var result in MapSearchResultsAsync(searchResult, options, cancellationToken))
         {
@@ -183,8 +183,8 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
         var filter = options switch
         {
             { OldFilter: not null, Filter: not null } => throw new ArgumentException($"Either '{nameof(options.Filter)}' or '{nameof(options.OldFilter)}' can be specified, but not both."),
-            { OldFilter: {} legacyFilter } => CouchbaseCollectionSearchMapping.BuildFromLegacyFilter(legacyFilter, _model),
-            { Filter: {} newFilter } => new CouchbaseSearchFilterTranslator().Translate(newFilter, _model),
+            { OldFilter: { } legacyFilter } => CouchbaseCollectionSearchMapping.BuildFromLegacyFilter(legacyFilter, _model),
+            { Filter: { } newFilter } => new CouchbaseSearchFilterTranslator().Translate(newFilter, _model),
             _ => null
         };
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -200,7 +200,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
             });
 
         var textQuery = new MatchQuery(string.Join(" ", keywords))
-            .Field(textDataProperty.StorageName!);                
+            .Field(textDataProperty.StorageName!);
 
         // Combine queries if filter exists
         ISearchQuery? finalQuery = textQuery;
@@ -226,7 +226,7 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
                 "Configure IndexName in CouchbaseSearchCollectionOptions.");
         }
 
-        var searchResult = await RunOperationAsync("HybridSearch", () => 
+        var searchResult = await RunOperationAsync("HybridSearch", () =>
             _scope.SearchAsync(
                 _vectorIndexName,
                 searchRequest,
@@ -300,26 +300,26 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
        ISearchResult searchResult,
        VectorSearchOptions<TRecord> searchOptions,
        [EnumeratorCancellation] CancellationToken cancellationToken)
-   {
-       if (searchResult is null)
-       {
-           throw new ArgumentNullException(nameof(searchResult), "Search result cannot be null.");
-       }
+    {
+        if (searchResult is null)
+        {
+            throw new ArgumentNullException(nameof(searchResult), "Search result cannot be null.");
+        }
 
-       foreach (var hit in searchResult.Hits)
-       {
-           var docId = hit.Id;
-           var score = hit.Score;
+        foreach (var hit in searchResult.Hits)
+        {
+            var docId = hit.Id;
+            var score = hit.Score;
 
-           // Fetch the full document from KV by the doc ID
-           var getResult = await _collection.GetAsync(docId, 
-               options => options.Transcoder(new RawJsonTranscoder())).ConfigureAwait(false);
-           var docFromDb = getResult.ContentAs<byte[]>();
+            // Fetch the full document from KV by the doc ID
+            var getResult = await _collection.GetAsync(docId,
+                options => options.Transcoder(new RawJsonTranscoder())).ConfigureAwait(false);
+            var docFromDb = getResult.ContentAs<byte[]>();
 
-           // Map the document to the record
-           var record = _mapper.MapFromStorageToDataModel(docFromDb, searchOptions.IncludeVectors);
+            // Map the document to the record
+            var record = _mapper.MapFromStorageToDataModel(docFromDb, searchOptions.IncludeVectors);
 
-           yield return new VectorSearchResult<TRecord>(record, score);
-       }
-   }
-} 
+            yield return new VectorSearchResult<TRecord>(record, score);
+        }
+    }
+}

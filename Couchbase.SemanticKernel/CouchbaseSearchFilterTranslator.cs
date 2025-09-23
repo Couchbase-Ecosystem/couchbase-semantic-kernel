@@ -166,7 +166,7 @@ internal class CouchbaseSearchFilterTranslator
     private ISearchQuery TranslateMethodCall(MethodCallExpression methodCall)
     {
         // Enumerable.Contains(source, item)
-        if (methodCall.Method.Name == nameof(Enumerable.Contains) && 
+        if (methodCall.Method.Name == nameof(Enumerable.Contains) &&
             methodCall.Method.DeclaringType == typeof(Enumerable) &&
             methodCall.Arguments.Count == 2)
         {
@@ -191,37 +191,37 @@ internal class CouchbaseSearchFilterTranslator
         {
             // Contains over field enumerable (array field contains value)
             case var _ when TryBindProperty(source, out var enumerableProperty):
-            {
-                if (item is not ConstantExpression constant)
                 {
-                    throw new NotSupportedException("Value must be a constant.");
-                }
+                    if (item is not ConstantExpression constant)
+                    {
+                        throw new NotSupportedException("Value must be a constant.");
+                    }
 
-                return new TermQuery(constant.Value.ToString()).Field(enumerableProperty.StorageName);
-            }
+                    return new TermQuery(constant.Value.ToString()).Field(enumerableProperty.StorageName);
+                }
 
             // Contains over inline enumerable (value in array)
             case NewArrayExpression newArray:
-            {
-                var elements = new object?[newArray.Expressions.Count];
-
-                for (var i = 0; i < newArray.Expressions.Count; i++)
                 {
-                    if (newArray.Expressions[i] is not ConstantExpression { Value: var elementValue })
+                    var elements = new object?[newArray.Expressions.Count];
+
+                    for (var i = 0; i < newArray.Expressions.Count; i++)
                     {
-                        throw new NotSupportedException("Inline array elements must be constants.");
+                        if (newArray.Expressions[i] is not ConstantExpression { Value: var elementValue })
+                        {
+                            throw new NotSupportedException("Inline array elements must be constants.");
+                        }
+
+                        elements[i] = elementValue;
                     }
 
-                    elements[i] = elementValue;
+                    return ProcessInlineEnumerable(elements, item);
                 }
 
-                return ProcessInlineEnumerable(elements, item);
-            }
-
             case ConstantExpression { Value: IEnumerable enumerable and not string }:
-            {
-                return ProcessInlineEnumerable(enumerable, item);
-            }
+                {
+                    return ProcessInlineEnumerable(enumerable, item);
+                }
 
             default:
                 throw new NotSupportedException("Unsupported Contains filter.");
@@ -258,7 +258,7 @@ internal class CouchbaseSearchFilterTranslator
         string? modelName = null;
 
         // Regular member access for strongly-typed POCO binding (e.g. r => r.SomeInt == 8)
-        if (unwrappedExpression is MemberExpression memberExpression && 
+        if (unwrappedExpression is MemberExpression memberExpression &&
             memberExpression.Expression == this._recordParameter)
         {
             modelName = memberExpression.Member.Name;

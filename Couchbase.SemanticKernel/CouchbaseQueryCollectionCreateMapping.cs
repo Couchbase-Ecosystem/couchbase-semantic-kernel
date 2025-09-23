@@ -88,7 +88,7 @@ internal static class CouchbaseQueryCollectionCreateMapping
         var textConditions = new List<string>();
         foreach (var textProperty in textProperties)
         {
-            var keywordConditions = keywords.Select(keyword => 
+            var keywordConditions = keywords.Select(keyword =>
                 $"LOWER({textProperty.StorageName}) LIKE LOWER('%{keyword.Replace("'", "''")}%')");
             textConditions.Add($"({string.Join(" OR ", keywordConditions)})");
         }
@@ -115,8 +115,8 @@ internal static class CouchbaseQueryCollectionCreateMapping
     /// <returns>WHERE clause string or empty string if not specified.</returns>
     public static string BuildIndexWhereClause(CouchbaseQueryCollectionOptions options)
     {
-        return !string.IsNullOrEmpty(options.IndexWhereClause) 
-            ? $"WHERE {options.IndexWhereClause}" 
+        return !string.IsNullOrEmpty(options.IndexWhereClause)
+            ? $"WHERE {options.IndexWhereClause}"
             : "";
     }
 
@@ -134,4 +134,4 @@ internal static class CouchbaseQueryCollectionCreateMapping
             _ => "dot"
         };
     }
-} 
+}

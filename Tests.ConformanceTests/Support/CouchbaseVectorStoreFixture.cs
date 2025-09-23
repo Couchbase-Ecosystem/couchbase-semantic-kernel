@@ -11,4 +11,4 @@ namespace Couchbase.ConformanceTests.Support;
 public sealed class CouchbaseVectorStoreFixture : VectorStoreFixture
 {
     public override TestStore TestStore => CouchbaseTestStore.Instance;
-} 
+}

@@ -12,10 +12,10 @@ namespace Couchbase.ConformanceTests.Support;
 public sealed class CouchbaseSimpleModelFixture : SimpleModelFixture<string>
 {
     public override TestStore TestStore => CouchbaseTestStore.Instance;
-    
+
     // Use fixed collection name instead of GUID for easier data management
     public override string CollectionName => "simple_model_tests";
-    
+
     /// <summary>
     /// Override to use Couchbase Query collection with COMPOSITE index for query operations.
     /// </summary>
@@ -23,7 +23,7 @@ public sealed class CouchbaseSimpleModelFixture : SimpleModelFixture<string>
     {
         var testStore = (CouchbaseTestStore)TestStore;
         var vectorStore = testStore.GetVectorStore(new CouchbaseVectorStoreOptions { IndexType = CouchbaseIndexType.Composite });
-        
+
         var queryOptions = new CouchbaseQueryCollectionOptions
         {
             IndexName = $"{CollectionName}_composite_index",
@@ -31,7 +31,7 @@ public sealed class CouchbaseSimpleModelFixture : SimpleModelFixture<string>
             SimilarityMetric = "COSINE",
             QuantizationSettings = null // COMPOSITE doesn't use quantization
         };
-        
+
         return vectorStore.GetCollection<string, VectorData.ConformanceTests.Models.SimpleRecord<string>>(CollectionName, queryOptions);
     }
 
@@ -42,7 +42,7 @@ public sealed class CouchbaseSimpleModelFixture : SimpleModelFixture<string>
     {
         // Step 1: Pre-seed minimal data first to allow vector index creation
         await this.PreSeedMinimalDataAsync();
-        
+
         // Step 2: Now seed the actual test data
         await base.SeedAsync();
     }
@@ -65,8 +65,8 @@ public sealed class CouchbaseSimpleModelFixture : SimpleModelFixture<string>
 
         // Use UpsertAsync (single method) instead of UpsertBatchAsync
         await this.Collection.UpsertAsync(minimalData);
-        
+
         // Wait a moment for data to be available
         await Task.Delay(100);
     }
-} 
+}
