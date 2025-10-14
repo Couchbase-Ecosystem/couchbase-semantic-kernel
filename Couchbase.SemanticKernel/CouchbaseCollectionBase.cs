@@ -123,21 +123,22 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
     public override async Task EnsureCollectionExistsAsync(CancellationToken cancellationToken = default)
     {
         // 1. Check if the collection already exists
-        if (!await CollectionExistsAsync(cancellationToken).ConfigureAwait(false))
-        {
-            // Create the collection if it does not exist
-            await RunOperationAsync("CreateCollection", async () =>
-            {
-                var collectionManager = _scope.Bucket.Collections;
-                var collectionSpec = new CollectionSpec(_scope.Name, this.Name);
-                await collectionManager
-                    .CreateCollectionAsync(collectionSpec, null)
-                    .ConfigureAwait(false);
-            }).ConfigureAwait(false);
-        }
+        // if (!await CollectionExistsAsync(cancellationToken).ConfigureAwait(false))
+        // {
+        //     // Create the collection if it does not exist
+        //     await RunOperationAsync("CreateCollection", async () =>
+        //     {
+        //         var collectionManager = _scope.Bucket.Collections;
+        //         var collectionSpec = new CollectionSpec(_scope.Name, this.Name);
+        //         await collectionManager
+        //             .CreateCollectionAsync(collectionSpec, null)
+        //             .ConfigureAwait(false);
+        //     }).ConfigureAwait(false);
+        // }
 
         // 2. Delegate index creation to derived classes
-        await EnsureIndexExistsAsync(cancellationToken).ConfigureAwait(false);
+        // await EnsureIndexExistsAsync(cancellationToken).ConfigureAwait(false);
+        throw new NotImplementedException("EnsureCollectionExistsAsync is not implemented yet.");
     }
 
     /// <summary>
@@ -145,7 +146,7 @@ public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollec
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    protected abstract Task EnsureIndexExistsAsync(CancellationToken cancellationToken);
+    // protected abstract Task EnsureIndexExistsAsync(CancellationToken cancellationToken);
 
     /// <inheritdoc />
     public override async Task EnsureCollectionDeletedAsync(CancellationToken cancellationToken = default)

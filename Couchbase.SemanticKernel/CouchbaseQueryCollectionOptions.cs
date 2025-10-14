@@ -45,7 +45,7 @@ public class CouchbaseQueryCollectionOptions : ICouchbaseCollectionOptions
     public int? VectorDimensions { get; set; }
 
     /// <summary>
-    /// Similarity metric string (COSINE, DOT_PRODUCT, L2_SQUARED). Defaults to DOT_PRODUCT.
+    /// Similarity metric string (DOT_PRODUCT, L2, EUCLIDEAN, COSINE, L2_SQUARED, EUCLIDEAN_SQUARED). Defaults to DOT_PRODUCT.
     /// </summary>
     public string? SimilarityMetric { get; set; } = "DOT_PRODUCT";
 

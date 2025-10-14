@@ -49,13 +49,13 @@ public class CouchbaseSearchCollection<TKey, TRecord> : CouchbaseCollectionBase<
     /// <summary>
     /// Validates that the configured FTS index exists and is accessible.
     /// </summary>
-    protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrEmpty(_vectorIndexName))
-        {
-            await ValidateFtsIndexExistsAsync(cancellationToken).ConfigureAwait(false);
-        }
-    }
+    // protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
+    // {
+    //     if (!string.IsNullOrEmpty(_vectorIndexName))
+    //     {
+    //         await ValidateFtsIndexExistsAsync(cancellationToken).ConfigureAwait(false);
+    //     }
+    // }
 
     /// <summary>
     /// Validates that the configured FTS index exists and is accessible.

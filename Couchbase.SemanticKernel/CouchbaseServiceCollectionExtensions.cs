@@ -241,4 +241,32 @@ public static class CouchbaseServiceCollectionExtensions
             ? options // There is nothing to change.
             : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
     }
+    
+    private static CouchbaseSearchCollectionOptions? GetSearchCollectionOptions(IServiceProvider sp, Func<IServiceProvider, CouchbaseSearchCollectionOptions?>? optionsProvider)
+    {
+        var options = optionsProvider?.Invoke(sp);
+        if (options?.EmbeddingGenerator is not null)
+        {
+            return options; // The user has provided everything, there is nothing to change.
+        }
+
+        var embeddingGenerator = sp.GetService<IEmbeddingGenerator>();
+        return embeddingGenerator is null
+            ? options // There is nothing to change.
+            : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
+    }
+    
+    private static CouchbaseQueryCollectionOptions? GetQueryCollectionOptions(IServiceProvider sp, Func<IServiceProvider, CouchbaseQueryCollectionOptions?>? optionsProvider)
+    {
+        var options = optionsProvider?.Invoke(sp);
+        if (options?.EmbeddingGenerator is not null)
+        {
+            return options; // The user has provided everything, there is nothing to change.
+        }
+
+        var embeddingGenerator = sp.GetService<IEmbeddingGenerator>();
+        return embeddingGenerator is null
+            ? options // There is nothing to change.
+            : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
+    }
 }

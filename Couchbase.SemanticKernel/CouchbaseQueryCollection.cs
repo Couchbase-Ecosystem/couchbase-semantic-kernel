@@ -47,24 +47,24 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
     /// <summary>
     /// Ensures the appropriate index (BHIVE or COMPOSITE) exists for this collection.
     /// </summary>
-    protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
-    {
-        switch (_indexType)
-        {
-            case CouchbaseIndexType.Bhive:
-            case CouchbaseIndexType.Composite:
-                await CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken).ConfigureAwait(false);
-                break;
-            case CouchbaseIndexType.Search:
-                throw new InvalidOperationException(
-                    "Search index type is not supported for CouchbaseQueryCollection. " +
-                    "Use CouchbaseSearchCollection instead.");
-            default:
-                throw new InvalidOperationException(
-                    $"Unsupported index type '{_indexType}' for CouchbaseQueryCollection. " +
-                    "Supported types are: BHIVE, COMPOSITE");
-        }
-    }
+    // protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
+    // {
+        // switch (_indexType)
+        // {
+        //     case CouchbaseIndexType.Bhive:
+        //     case CouchbaseIndexType.Composite:
+        //         await CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken).ConfigureAwait(false);
+        //         break;
+        //     case CouchbaseIndexType.Search:
+        //         throw new InvalidOperationException(
+        //             "Search index type is not supported for CouchbaseQueryCollection. " +
+        //             "Use CouchbaseSearchCollection instead.");
+        //     default:
+        //         throw new InvalidOperationException(
+        //             $"Unsupported index type '{_indexType}' for CouchbaseQueryCollection. " +
+        //             "Supported types are: BHIVE, COMPOSITE");
+        // }
+    // }
 
     /// <summary>
     /// Creates a vector index (BHIVE or COMPOSITE) if it doesn't already exist.
@@ -168,7 +168,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         var similarityMetric = CouchbaseQueryCollectionCreateMapping.MapSimilarityMetric(_queryOptions.SimilarityMetric);
         var formattedVector = CouchbaseQueryCollectionCreateMapping.FormatVectorForSql(searchVector.ToArray().AsMemory());
 
-        // Build field list for explicit selection (like Python implementation)
+        // Build field list for explicit selection
         var fields = new List<string>();
 
         // Add all data properties (escaped with backticks for reserved words)
@@ -230,7 +230,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
             var record = _mapper.MapFromStorageToDataModel(jsonBytes, options?.IncludeVectors ?? false);
 
-            // Use distance directly as score (like Python implementation and SearchCollection pattern)
+            // Use distance directly as score
             // Note: Lower distance values indicate better matches
             yield return new VectorSearchResult<TRecord>(record, distance);
         }
@@ -244,7 +244,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         HybridSearchOptions<TRecord>? options = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Hybrid search is not yet implemented for CouchbaseQueryCollection. Use CouchbaseSearchCollection for hybrid search capabilities.");
+        throw new NotImplementedException("Hybrid search is not implemented for CouchbaseQueryCollection.");
     }
 
     /// <inheritdoc />

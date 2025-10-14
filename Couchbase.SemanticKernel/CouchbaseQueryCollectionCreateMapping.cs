@@ -127,10 +127,12 @@ internal static class CouchbaseQueryCollectionCreateMapping
     {
         return similarityMetric?.ToUpperInvariant() switch
         {
+            "DOT_PRODUCT" or "DOT" => "dot",
+            "L2" => "l2",
+            "EUCLIDEAN" => "euclidean",
             "COSINE" => "cosine",
-            "DOT_PRODUCT" => "dot",
-            "EUCLIDEAN" or "L2" => "l2",
-            "L2_SQUARED" or "EUCLIDEAN_SQUARED" => "l2_squared",
+            "L2_SQUARED" => "l2_squared",
+            "EUCLIDEAN_SQUARED" => "euclidean_squared",
             _ => "dot"
         };
     }
