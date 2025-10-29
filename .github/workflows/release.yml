@@ -77,7 +77,7 @@ jobs:
           -o "${{ github.workspace }}/${{ env.PACKAGE_PATH }}"
 
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v4'
+        uses: 'actions/upload-artifact@v5'
         with:
           name: 'packages'
           path: '${{ github.workspace }}/${{ env.PACKAGE_PATH }}'
