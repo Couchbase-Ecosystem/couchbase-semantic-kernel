@@ -23,7 +23,7 @@ public abstract class Program
     public static async Task Main(string[] args)
     {
         Console.WriteLine("Couchbase BHIVE Vector Search Demo");
-        Console.WriteLine("=====================================");
+        Console.WriteLine("====================================");
 
         try
         {

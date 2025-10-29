@@ -29,8 +29,7 @@ internal sealed class CouchbaseTestStore : TestStore
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
 
-    // FTS Index name for tests - MUST exist before running tests
-    public const string TestIndexName = "hotelIndex";
+    public const string TestIndexName = "";
 
     public ICluster Cluster => _cluster ?? throw new InvalidOperationException("Not initialized");
     public IBucket Bucket => _bucket ?? throw new InvalidOperationException("Not initialized");
@@ -49,18 +48,14 @@ internal sealed class CouchbaseTestStore : TestStore
     {
         try
         {
-            // Connect to your local Couchbase cluster using static method
             _cluster = await Couchbase.Cluster.ConnectAsync(ConnectionString, Username, Password);
 
-            // Try to get the bucket (create if it doesn't exist)
             try
             {
                 _bucket = await _cluster.BucketAsync(BucketName);
             }
             catch (BucketNotFoundException)
             {
-                // If bucket doesn't exist, you'll need to create it manually
-                // or use the management API (requires additional setup)
                 throw new InvalidOperationException(
                     $"Bucket '{BucketName}' not found. Please create it manually in Couchbase Web Console.");
             }
