@@ -51,7 +51,7 @@ jobs:
         uses: 'actions/checkout@v4'
 
       - name: '.NET Setup'
-        uses: 'actions/setup-dotnet@v4'
+        uses: 'actions/setup-dotnet@v5'
         with:
           global-json-file: '${{ github.workspace }}/${{ env.GLOBAL_JSON_FILE }}'
 
@@ -99,7 +99,7 @@ jobs:
         uses: 'actions/checkout@v4'
 
       - name: '.NET Setup'
-        uses: 'actions/setup-dotnet@v4'
+        uses: 'actions/setup-dotnet@v5'
         with:
           global-json-file: '${{ github.workspace }}/${{ env.GLOBAL_JSON_FILE }}'
 
