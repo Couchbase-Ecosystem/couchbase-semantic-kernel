@@ -15,7 +15,7 @@ namespace Couchbase.SemanticKernel;
 /// </summary>
 internal class CouchbaseModelBuilder : CollectionModelBuilder
 {
-    internal const string SupportedVectorTypes = 
+    internal const string SupportedVectorTypes =
         "ReadOnlyMemory<float>, " +
         "IEnumerable<float>, " +
         "IReadOnlyCollection<float>, " +
@@ -146,4 +146,4 @@ internal class CouchbaseModelBuilder : CollectionModelBuilder
             || type == typeof(Embedding<float>)
             || type == typeof(float[]);
     }
-} 
+}

@@ -14,4 +14,4 @@ public class CouchbaseNoDataConformanceTests(CouchbaseNoDataConformanceTests.Fix
     {
         public override TestStore TestStore => CouchbaseTestStore.Instance;
     }
-} 
+}

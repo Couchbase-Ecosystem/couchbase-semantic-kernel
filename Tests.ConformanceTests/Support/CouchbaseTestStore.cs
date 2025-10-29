@@ -23,14 +23,13 @@ internal sealed class CouchbaseTestStore : TestStore
     private IBucket? _bucket;
     private IScope? _scope;
 
-    private const string ConnectionString = "couchbases://cb.1-0nc9a4iqbyiqy7.cloud.couchbase.com";
-    private const string Username = "Admin";
-    private const string Password = "Admin@123";
+    private const string ConnectionString = "couchbase://localhost";
+    private const string Username = "Administrator";
+    private const string Password = "password";
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
-    
-    // FTS Index name for tests - MUST exist before running tests
-    public const string TestIndexName = "hotelIndex";
+
+    public const string TestIndexName = "";
 
     public ICluster Cluster => _cluster ?? throw new InvalidOperationException("Not initialized");
     public IBucket Bucket => _bucket ?? throw new InvalidOperationException("Not initialized");
@@ -38,22 +37,6 @@ internal sealed class CouchbaseTestStore : TestStore
 
     public CouchbaseVectorStore GetVectorStore(CouchbaseVectorStoreOptions? options = null)
         => new(Scope, options ?? new CouchbaseVectorStoreOptions());
-
-    /// <summary>
-    /// Gets a test collection with IndexName configured for search operations.
-    /// This ensures all test collections can perform vector and hybrid search.
-    /// </summary>
-    public VectorStoreCollection<TKey, TRecord> GetTestCollection<TKey, TRecord>(string collectionName)
-        where TKey : notnull
-        where TRecord : class
-    {
-        var options = new CouchbaseCollectionOptions
-        {
-            IndexName = TestIndexName
-        };
-        
-        return new CouchbaseCollection<TKey, TRecord>(Scope, collectionName, options);
-    }
 
     private CouchbaseTestStore()
     {
@@ -65,22 +48,18 @@ internal sealed class CouchbaseTestStore : TestStore
     {
         try
         {
-            // Connect to your local Couchbase cluster using static method
             _cluster = await Couchbase.Cluster.ConnectAsync(ConnectionString, Username, Password);
-            
-            // Try to get the bucket (create if it doesn't exist)
+
             try
             {
                 _bucket = await _cluster.BucketAsync(BucketName);
             }
             catch (BucketNotFoundException)
             {
-                // If bucket doesn't exist, you'll need to create it manually
-                // or use the management API (requires additional setup)
                 throw new InvalidOperationException(
                     $"Bucket '{BucketName}' not found. Please create it manually in Couchbase Web Console.");
             }
-            
+
             _scope = _bucket.Scope(ScopeName);
 
             // Create the default vector store
@@ -98,4 +77,4 @@ internal sealed class CouchbaseTestStore : TestStore
         _cluster?.Dispose();
         await Task.CompletedTask;
     }
-} 
+}

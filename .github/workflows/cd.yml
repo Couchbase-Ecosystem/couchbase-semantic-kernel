@@ -1,0 +1,16 @@
+name: 'CD'
+
+on:
+  release:
+    types:
+      - 'published'
+
+jobs:
+  release:
+    name: 'Release'
+    uses: ./.github/workflows/release.yml
+    with:
+      solution: 'Couchbase.SemanticKernel.sln'
+      release_tag: ${{ github.event.release.tag_name }}
+      release_body: ${{ github.event.release.body }}
+    secrets: 'inherit'

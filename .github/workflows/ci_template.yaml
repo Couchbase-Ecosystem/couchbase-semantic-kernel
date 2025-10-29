@@ -1,0 +1,123 @@
+name: CI Template
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: The path to look for a Visual Studio Solution file (without a trailing slash).
+        type: string
+        required: false
+        default: ''
+
+env:
+  BUILD_CONFIG: Release
+  DOTNET_GLOBAL_JSON: ${{ inputs.path != '' && format('{0}/global.json', inputs.path) || 'global.json' }}
+  RESTORE_PATTERN: ${{ inputs.path != '' && format('{0}/**/packages.lock.json', inputs.path) || '**/packages.lock.json' }}
+  TESTS_PATTERN: ${{ inputs.path != '' && format('{0}/**/*.Test*.csproj', inputs.path) || '**/*.Test*.csproj' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Retrieve the preceding commit to enable 'changed-files' to create a diff.
+          fetch-depth: 2
+
+      - name: .NET Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
+          problem-matcher: false
+
+
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: ${{ inputs.path != '' && format('{0}/**', inputs.path) || '' }}
+
+      - name: .NET Cache Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: .NET Restore
+        run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }}
+
+      - name: Install latest .NET Format tool
+        shell: bash
+        run: |
+          dotnet tool install -g dotnet-format --version "9.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet9/nuget/v3/index.json
+
+
+      - name: .NET Lint
+        uses: zyactions/dotnet-lint@v1
+        with:
+          working-directory: ${{ inputs.path }}
+          # This list is empty for the initial commit. NET Lint will lint all files in this case.
+          include: ${{ steps.changed-files.outputs.all_changed_files }}
+          use-standalone-tool: true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    env:
+      FILTERED_SOLUTION: Tests.slnf
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Find Solution
+      id: find
+      run: |
+        SOLUTION=$(find . -name "*.sln" -not -path "./bin/*" -not -path "./obj/*" | head -1)
+        echo "solution=$SOLUTION" >> $GITHUB_OUTPUT
+    
+    - name: Filter Solution  
+      run: |
+        # Create solution filter for test projects only
+        cat > ${{ env.FILTERED_SOLUTION }} << 'EOF'
+        {
+          "solution": {
+            "path": "${{ steps.find.outputs.solution }}",
+            "projects": [
+              "Tests.ConformanceTests\\Tests.ConformanceTests.csproj"
+            ]
+          }
+        }
+        EOF
+    
+    - name: .NET Setup
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
+        problem-matcher: false
+    
+    - name: .NET Cache Packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
+        restore-keys: ${{ runner.os }}-nuget-
+    
+    - name: .NET Restore
+      run: dotnet restore ${{ env.FILTERED_SOLUTION }}
+    
+    - name: .NET Build
+      run: dotnet build ${{ env.FILTERED_SOLUTION }} --no-restore --configuration ${{ env.BUILD_CONFIG }}
+    
+    # - name: .NET Test
+    #   run: dotnet test ${{ env.FILTERED_SOLUTION }} --no-build --configuration ${{ env.BUILD_CONFIG }} --verbosity normal --logger trx --results-directory TestResults
+    
+    # - name: Upload test results
+    #   uses: actions/upload-artifact@v4
+    #   if: always()
+    #   with:
+    #     name: test-results
+    #     path: TestResults/*.trx

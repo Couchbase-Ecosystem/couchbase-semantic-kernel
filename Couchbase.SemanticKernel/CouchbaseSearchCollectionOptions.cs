@@ -28,7 +28,7 @@ public class CouchbaseSearchCollectionOptions : ICouchbaseCollectionOptions
     /// Gets or sets the number of candidates to consider during vector search.
     /// </summary>
     public uint? NumCandidates { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the boost factor for vector search operations.
     /// </summary>
@@ -74,4 +74,4 @@ public class CouchbaseSearchCollectionOptions : ICouchbaseCollectionOptions
             DistanceFunction = other.DistanceFunction;
         }
     }
-} 
+}

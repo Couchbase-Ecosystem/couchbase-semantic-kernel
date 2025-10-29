@@ -101,4 +101,4 @@ internal sealed class CouchbaseDynamicMapper : ICouchbaseMapper<Dictionary<strin
 
         return dataModel;
     }
-} 
+}

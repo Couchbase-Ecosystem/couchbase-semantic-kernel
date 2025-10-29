@@ -16,4 +16,4 @@ public class CouchbaseBasicFilterTests(CouchbaseBasicFilterTests.Fixture fixture
 
         public override string CollectionName => "filter_tests";
     }
-} 
+}

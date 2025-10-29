@@ -135,7 +135,7 @@ internal static class CouchbaseCollectionSearchMapping
             _ => throw new NotSupportedException($"Unsupported data type: {value.GetType().Name}")
         };
     }
-    
+
 #pragma warning restore CS0618 // Type or member is obsolete
 
 }

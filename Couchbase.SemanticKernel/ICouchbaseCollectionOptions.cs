@@ -23,4 +23,4 @@ public interface ICouchbaseCollectionOptions
     /// Gets or sets the JSON serializer options to use for serialization.
     /// </summary>
     JsonSerializerOptions? JsonSerializerOptions { get; set; }
-} 
+}

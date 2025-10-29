@@ -18,9 +18,9 @@ namespace Couchbase.ConformanceTests;
 public class CouchbaseDependencyInjectionTests
     : DependencyInjectionTests<CouchbaseVectorStore, VectorStoreCollection<string, SimpleRecord<string>>, string, SimpleRecord<string>>
 {
-    private const string ConnectionString = "couchbases://cb.1-0nc9a4iqbyiqy7.cloud.couchbase.com";
-    private const string Username = "Admin";
-    private const string Password = "Admin@123";
+    private const string ConnectionString = "couchbase://localhost";
+    private const string Username = "Administrator";
+    private const string Password = "password";
     private const string BucketName = "travel-sample";
     private const string ScopeName = "inventory";
 
@@ -51,25 +51,23 @@ public class CouchbaseDependencyInjectionTests
     {
         get
         {
+            // Test Search collections
             yield return (services, serviceKey, name, lifetime) => serviceKey is null
                 ? services
                     .AddSingleton<IScope>(sp => ScopeProvider(sp).Result)
-                    .AddCouchbaseCollection<string, SimpleRecord<string>>(name, lifetime: lifetime)
+                    .AddCouchbaseSearchCollection<string, SimpleRecord<string>>(name, lifetime: lifetime)
                 : services
                     .AddSingleton<IScope>(sp => ScopeProvider(sp, serviceKey).Result)
-                    .AddKeyedCouchbaseCollection<string, SimpleRecord<string>>(serviceKey, name, lifetime: lifetime);
+                    .AddCouchbaseSearchCollection<string, SimpleRecord<string>>(name, lifetime: lifetime);
 
+            // Test Query collections
             yield return (services, serviceKey, name, lifetime) => serviceKey is null
-                ? services.AddCouchbaseCollection<string, SimpleRecord<string>>(
-                    name, ConnectionString, Username, Password, BucketName, ScopeName, lifetime: lifetime)
-                : services.AddKeyedCouchbaseCollection<string, SimpleRecord<string>>(
-                    serviceKey, name, ConnectionString, Username, Password, BucketName, ScopeName, lifetime: lifetime);
-
-            yield return (services, serviceKey, name, lifetime) => serviceKey is null
-                ? services.AddCouchbaseCollection<string, SimpleRecord<string>>(
-                    name, sp => ScopeProvider(sp).Result, lifetime: lifetime)
-                : services.AddKeyedCouchbaseCollection<string, SimpleRecord<string>>(
-                    serviceKey, name, sp => ScopeProvider(sp, serviceKey).Result, lifetime: lifetime);
+                ? services
+                    .AddSingleton<IScope>(sp => ScopeProvider(sp).Result)
+                    .AddCouchbaseQueryCollection<string, SimpleRecord<string>>(name, lifetime: lifetime)
+                : services
+                    .AddSingleton<IScope>(sp => ScopeProvider(sp, serviceKey).Result)
+                    .AddCouchbaseQueryCollection<string, SimpleRecord<string>>(name, lifetime: lifetime);
         }
     }
 
@@ -102,9 +100,8 @@ public class CouchbaseDependencyInjectionTests
 
         Assert.Throws<ArgumentException>(() => services.AddCouchbaseVectorStore(connectionString: null!, "user", "pass", "bucket", "scope"));
         Assert.Throws<ArgumentException>(() => services.AddKeyedCouchbaseVectorStore(serviceKey: "notNull", connectionString: null!, "user", "pass", "bucket", "scope"));
-        Assert.Throws<ArgumentException>(() => services.AddCouchbaseCollection<ulong, SimpleRecord<ulong>>(
-            name: "notNull", connectionString: null!, "user", "pass", "bucket", "scope"));
-        Assert.Throws<ArgumentException>(() => services.AddKeyedCouchbaseCollection<ulong, SimpleRecord<ulong>>(
-            serviceKey: "notNull", name: "notNull", connectionString: null!, "user", "pass", "bucket", "scope"));
+
+        // Note: AddCouchbaseSearchCollection and AddCouchbaseQueryCollection don't have connection string overloads
+        // They use IScope from DI container, so we test the vector store methods instead
     }
-} 
+}

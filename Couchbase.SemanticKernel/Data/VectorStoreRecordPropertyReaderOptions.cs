@@ -11,7 +11,7 @@ public class VectorStoreRecordPropertyReaderOptions
     /// Gets or sets a value indicating whether the connector/db supports multiple key properties.
     /// </summary>
     public bool SupportsMultipleKeys { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether the connector/db supports multiple vector properties.
     /// </summary>

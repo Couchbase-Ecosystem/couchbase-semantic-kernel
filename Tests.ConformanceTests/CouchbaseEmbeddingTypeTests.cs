@@ -20,4 +20,4 @@ public class CouchbaseEmbeddingTypeTests(CouchbaseEmbeddingTypeTests.Fixture fix
 
         public override string CollectionName => "embedding_type_tests";
     }
-} 
+}

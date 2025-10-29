@@ -9,20 +9,21 @@
         <RootNamespace>Couchbase.ConformanceTests</RootNamespace>
         <NoWarn>$(NoWarn);MEVD9000</NoWarn> <!-- Microsoft.Extensions.VectorData experimental user-facing APIs -->
         <NoWarn>$(NoWarn);MEVD9001</NoWarn> <!-- Microsoft.Extensions.VectorData experimental provider-facing APIs -->
+        <NoWarn>$(NoWarn);SKEXP0020</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="xunit" Version="2.9.0" />
         <PackageReference Include="xunit.extensibility.core" Version="2.9.0" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.9.0">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-        <PackageReference Include="CouchbaseNetClient" Version="3.6.5" />
+        <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
         <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.5.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-preview.7.25380.108" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.9.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-rc.2.25502.107" />
     </ItemGroup>
 
     <ItemGroup>

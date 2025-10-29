@@ -7,13 +7,12 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
-        <Version>0.2.2</Version>
+        <Version>0.2.3</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase connector for Microsoft Semantic Kernel.</Description>
         <PackageTags>Couchbase;SemanticKernel;VectorSearch</PackageTags>
         <RepositoryUrl>https://github.com/Couchbase-Ecosystem/couchbase-semantic-kernel</RepositoryUrl>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageOutputPath>bin\Release</PackageOutputPath>
         <PackageIcon>logo.png</PackageIcon>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -27,11 +26,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CouchbaseNetClient" Version="3.6.5" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-preview.7.25380.108" />
+        <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-rc.2.25502.107" />
         <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
-        <PackageReference Include="Microsoft.SemanticKernel" Version="1.36.1" />
-        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.36.1" />
+        <PackageReference Include="Microsoft.SemanticKernel" Version="1.66.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.66.0" />
     </ItemGroup>
 
 </Project>

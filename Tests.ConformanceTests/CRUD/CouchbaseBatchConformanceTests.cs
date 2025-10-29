@@ -9,4 +9,4 @@ namespace Couchbase.ConformanceTests.CRUD;
 public class CouchbaseBatchConformanceTests(CouchbaseSimpleModelFixture fixture)
     : BatchConformanceTests<string>(fixture), IClassFixture<CouchbaseSimpleModelFixture>
 {
-} 
+}

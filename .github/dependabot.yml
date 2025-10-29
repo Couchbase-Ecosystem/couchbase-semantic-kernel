@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Update NuGet packages weekly
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Update GitHub Actions weekly  
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

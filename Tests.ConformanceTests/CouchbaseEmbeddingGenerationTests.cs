@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using Couchbase.ConformanceTests.Support;
 using Couchbase.SemanticKernel;
 using Microsoft.Extensions.AI;
@@ -39,7 +40,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
                 IndexName = CouchbaseTestStore.TestIndexName,
                 Definition = recordDefinition
             };
-            
+
             return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
         }
 
@@ -54,7 +55,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
         [
             services => services
                 .AddSingleton(CouchbaseTestStore.Instance.Scope)
-                .AddCouchbaseCollection<string, RecordWithAttributes>(this.CollectionName)
+                .AddCouchbaseSearchCollection<string, RecordWithAttributes>(this.CollectionName)
         ];
     }
 
@@ -78,12 +79,12 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
         {
             // Use the Couchbase-specific collection with IndexName configured
             var couchbaseVectorStore = (CouchbaseVectorStore)vectorStore;
-            var options = new CouchbaseCollectionOptions
+            var options = new CouchbaseSearchCollectionOptions
             {
                 IndexName = CouchbaseTestStore.TestIndexName,
                 Definition = recordDefinition
             };
-            
+
             return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
         }
 
@@ -98,7 +99,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
         [
             services => services
                 .AddSingleton(CouchbaseTestStore.Instance.Scope)
-                .AddCouchbaseCollection<string, RecordWithAttributes>(this.CollectionName)
+                .AddCouchbaseSearchCollection<string, RecordWithAttributes>(this.CollectionName)
         ];
     }
-} 
+}
