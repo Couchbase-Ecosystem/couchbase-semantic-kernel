@@ -45,7 +45,7 @@ jobs:
         uses: 'zyactions/semver@v1'
         with:
           version: ${{ inputs.release_tag }}
-          prefixes: 'v-,release-'
+          prefixes: 'v,release-'
 
       - name: 'Checkout'
         uses: 'actions/checkout@v4'
