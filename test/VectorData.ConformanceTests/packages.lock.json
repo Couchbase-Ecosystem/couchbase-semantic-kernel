@@ -4,9 +4,9 @@
     "net8.0": {
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Direct",
-        "requested": "[9.5.0, )",
-        "resolved": "9.5.0",
-        "contentHash": "Y46j1S4zOPtLAHCUzhHIm1IhCMr7764754bLYupyc1JZcvLNXjUk+VC7H3Bou20S2hHgDJnfox7X/H/3BYEvzA=="
+        "requested": "[9.10.1, )",
+        "resolved": "9.10.1",
+        "contentHash": "e31P/WT7Pgx/9P6HNBUGEO0v9XyuZj6Dbekz4XeaP6v4GQ7jK1AllBiNTu1k2zx2x6upSeAmA6sRp6C2BgmMwQ=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
@@ -57,7 +57,7 @@
       },
       "xunit": {
         "type": "Direct",
-        "requested": "[2.8.2, )",
+        "requested": "[2.9.0, )",
         "resolved": "2.9.0",
         "contentHash": "PtU3rZ0ThdmdJqTbK7GkgFf6iBaCR6Q0uvJHznID+XEYk2v6O/b7sRxqnbi3B2gRDXxjTqMkVNayzwsqsFUxRw==",
         "dependencies": {
@@ -68,7 +68,7 @@
       },
       "xunit.extensibility.core": {
         "type": "Direct",
-        "requested": "[2.8.2, )",
+        "requested": "[2.9.0, )",
         "resolved": "2.9.0",
         "contentHash": "zjDEUSxsr6UNij4gIwCgMqQox+oLDPRZ+mubwWLci+SssPBFQD1xeRR4SvgBuXqbE0QXCJ/STVTp+lxiB5NLVA==",
         "dependencies": {
@@ -77,9 +77,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[2.8.2, )",
-        "resolved": "2.8.2",
-        "contentHash": "vm1tbfXhFmjFMUmS4M0J0ASXz3/U5XvXBa6DOQUL3fEz4Vt6YPhv+ESCarx6M6D+9kJkJYZKCNvJMas1+nVfmQ=="
+        "requested": "[2.9.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "HggUqjQJe8PtDxcP25Q+CnR6Lz4oX3GElhD9V4oU2+75x9HI6A6sxbfKGS4UwU4t4yJaS9fBmAuriz8bQApNjw=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",

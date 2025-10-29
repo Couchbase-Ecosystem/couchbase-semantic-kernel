@@ -22,7 +22,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
         <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
         <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.9.1" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-rc.2.25502.107" />
     </ItemGroup>
 
