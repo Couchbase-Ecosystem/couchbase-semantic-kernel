@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
     <AssemblyName>CouchbaseVectorSearchDemo</AssemblyName>
     <RootNamespace>CouchbaseVectorSearchDemo</RootNamespace>
     <NoWarn>$(NoWarn);SKEXP0020;SKEXP0001;SKEXP0010;SKEXP0040;SKEXP0050;SKEXP0060;SKEXP0070;SKEXP0101</NoWarn>
