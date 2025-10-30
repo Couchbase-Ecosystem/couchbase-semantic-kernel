@@ -45,7 +45,7 @@ jobs:
         uses: 'zyactions/semver@v1'
         with:
           version: ${{ inputs.release_tag }}
-          prefixes: 'v,release-'
+          prefixes: 'v'
 
       - name: 'Checkout'
         uses: 'actions/checkout@v4'
@@ -73,7 +73,6 @@ jobs:
           --no-restore
           --configuration "${{ env.BUILD_CONFIG }}"
           -p:ContinuousIntegrationBuild=true
-          -p:PackageVersion=${{ steps.version.outputs.version }}
           -o "${{ github.workspace }}/${{ env.PACKAGE_PATH }}"
 
       - name: 'Upload Artifacts'
