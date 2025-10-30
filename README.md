@@ -1,4 +1,4 @@
-<img align="right" width="auto" height="auto" src="./Assets/logo.svg" alt="Couchbase Logo"/>
+<img align="right" width="150px" height="150px" src="./Assets/logo.svg" alt="Couchbase Logo"/>
 
 # Couchbase connector for Microsoft Semantic Kernel
 
