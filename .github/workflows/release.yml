@@ -66,11 +66,18 @@ jobs:
         run: >-
           dotnet restore "${{ github.workspace }}/${{ inputs.solution }}"
 
+      - name: '.NET Build'
+        run: >-
+          dotnet build
+          "${{ github.workspace }}/${{ inputs.solution }}"
+          --no-restore
+          --configuration "${{ env.BUILD_CONFIG }}"
+
       - name: '.NET Pack'
         run: >-
           dotnet pack
           "${{ github.workspace }}/${{ inputs.solution }}"
-          --no-restore
+          --no-build
           --configuration "${{ env.BUILD_CONFIG }}"
           -p:ContinuousIntegrationBuild=true
           -o "${{ github.workspace }}/${{ env.PACKAGE_PATH }}"
