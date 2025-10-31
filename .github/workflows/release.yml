@@ -48,7 +48,7 @@ jobs:
           prefixes: 'v'
 
       - name: 'Checkout'
-        uses: 'actions/checkout@v4'
+        uses: 'actions/checkout@v5'
 
       - name: '.NET Setup'
         uses: 'actions/setup-dotnet@v5'
@@ -102,7 +102,7 @@ jobs:
           # - { name: 'GitHub', source: 'https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json', key: 'GITHUB_TOKEN'  }
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@v4'
+        uses: 'actions/checkout@v5'
 
       - name: '.NET Setup'
         uses: 'actions/setup-dotnet@v5'
