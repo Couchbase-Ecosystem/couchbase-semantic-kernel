@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 2
 
       - name: .NET Setup
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
           problem-matcher: false
@@ -94,7 +94,7 @@ jobs:
         EOF
     
     - name: .NET Setup
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
         problem-matcher: false
