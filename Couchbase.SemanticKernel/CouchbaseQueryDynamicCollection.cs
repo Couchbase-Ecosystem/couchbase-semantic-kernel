@@ -6,9 +6,9 @@ using Couchbase.KeyValue;
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Represents a collection of vector store records in a Couchbase database using SQL++ queries (BHIVE/COMPOSITE),
+/// Represents a collection of vector store records in a Couchbase database using SQL++ queries (Hyperscale/Composite),
 /// mapped to a dynamic <c>Dictionary&lt;string, object?&gt;</c>.
-/// This collection uses Couchbase's Query API for vector search operations with BHIVE and COMPOSITE indexes.
+/// This collection uses Couchbase's Query API for vector search operations with Hyperscale and Composite indexes.
 /// </summary>
 #pragma warning disable CA1711 // Identifiers should not have incorrect suffix
 public sealed class CouchbaseQueryDynamicCollection : CouchbaseQueryCollection<object, Dictionary<string, object?>>
@@ -21,7 +21,7 @@ public sealed class CouchbaseQueryDynamicCollection : CouchbaseQueryCollection<o
     /// <param name="name">The name of the collection.</param>
     /// <param name="options">Configuration options for this class.</param>
     /// <param name="indexType">The index type to use for vector operations.</param>
-    public CouchbaseQueryDynamicCollection(IScope scope, string name, CouchbaseQueryCollectionOptions options, CouchbaseIndexType indexType = CouchbaseIndexType.Bhive)
+    public CouchbaseQueryDynamicCollection(IScope scope, string name, CouchbaseQueryCollectionOptions options, CouchbaseIndexType indexType = CouchbaseIndexType.Hyperscale)
         : base(
             scope,
             name,

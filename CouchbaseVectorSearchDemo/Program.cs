@@ -13,7 +13,7 @@ namespace CouchbaseVectorSearchDemo;
 /// <summary>
 /// Couchbase Vector Search Demo
 /// 
-/// This example demonstrates how to use CouchbaseQueryCollection with BHIVE index for vector search.
+/// This example demonstrates how to use CouchbaseQueryCollection with Hyperscale index for vector search.
 /// </summary>
 public abstract class Program
 {
@@ -22,7 +22,7 @@ public abstract class Program
 
     public static async Task Main(string[] args)
     {
-        Console.WriteLine("Couchbase BHIVE Vector Search Demo");
+        Console.WriteLine("Couchbase Hyperscale Vector Search Demo");
         Console.WriteLine("====================================");
 
         try
@@ -34,8 +34,8 @@ public abstract class Program
             // Step 1: Ingest data into Couchbase vector store
             await IngestDataIntoCouchbaseVectorStoreAsync();
 
-            // Step 2: Create BHIVE index manually
-            await CreateBhiveIndexAsync();
+            // Step 2: Create Hyperscale index manually
+            await CreateHyperscaleIndexAsync();
 
             // Step 3: Perform vector search
             await SearchCouchbaseVectorStoreAsync();
@@ -105,11 +105,11 @@ public abstract class Program
     }
 
     /// <summary>
-    /// Create BHIVE vector index manually after documents are inserted.
+    /// Create Hyperscale vector index manually after documents are inserted.
     /// </summary>
-    private static async Task CreateBhiveIndexAsync()
+    private static async Task CreateHyperscaleIndexAsync()
     {
-        Console.WriteLine("\nStep 2: Creating BHIVE vector index manually...");
+        Console.WriteLine("\nStep 2: Creating Hyperscale vector index manually...");
         
         var connectionString = _configuration?["Couchbase:ConnectionString"];
         var username = _configuration?["Couchbase:Username"];
@@ -129,8 +129,8 @@ public abstract class Program
         var bucket = await cluster.BucketAsync(bucketName!);
         var scope = await bucket.ScopeAsync(scopeName!);
 
-        // Create BHIVE index SQL
-        var indexName = "bhive_glossary_index";
+        // Create Hyperscale index SQL
+        var indexName = "hyperscale_glossary_index";
         var createIndexQuery = $@"
             CREATE VECTOR INDEX `{indexName}` 
             ON `{bucketName}`.`{scopeName}`.`{collectionName}` (DefinitionEmbedding VECTOR) 
@@ -143,17 +143,17 @@ public abstract class Program
 
         try
         {
-            Console.WriteLine("Executing BHIVE index creation query...");
+            Console.WriteLine("Executing Hyperscale index creation query...");
             await scope.QueryAsync<dynamic>(createIndexQuery);
-            Console.WriteLine($"BHIVE vector index '{indexName}' created successfully!");
+            Console.WriteLine($"Hyperscale vector index '{indexName}' created successfully!");
         }
         catch (Exception ex) when (ex.Message.Contains("already exists"))
         {
-            Console.WriteLine($"BHIVE vector index '{indexName}' already exists.");
+            Console.WriteLine($"Hyperscale vector index '{indexName}' already exists.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to create BHIVE vector index: {ex.Message}");
+            Console.WriteLine($"Failed to create Hyperscale vector index: {ex.Message}");
             throw;
         }
     }
@@ -244,10 +244,10 @@ public abstract class Program
         var bucket = await cluster.BucketAsync(bucketName);
         var scope = await bucket.ScopeAsync(scopeName);
 
-        // Configure BHIVE index options
+        // Configure Hyperscale index options
         var collectionOptions = new CouchbaseQueryCollectionOptions
         {
-            IndexName = "bhive_glossary_index",
+            IndexName = "hyperscale_glossary_index",
             SimilarityMetric = "cosine"
         };
 

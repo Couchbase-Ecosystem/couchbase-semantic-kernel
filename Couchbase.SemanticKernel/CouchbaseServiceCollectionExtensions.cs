@@ -217,7 +217,7 @@ public static class CouchbaseServiceCollectionExtensions
         string name,
         Func<IServiceProvider, IScope>? scopeProvider = default,
         Func<IServiceProvider, CouchbaseQueryCollectionOptions>? optionsProvider = default,
-        CouchbaseIndexType indexType = CouchbaseIndexType.Bhive,
+        CouchbaseIndexType indexType = CouchbaseIndexType.Hyperscale,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         return services.AddKeyedSingleton<VectorStoreCollection<object, Dictionary<string, object?>>>(null, (sp, _) =>

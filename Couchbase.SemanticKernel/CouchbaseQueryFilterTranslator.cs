@@ -14,7 +14,7 @@ using Microsoft.Extensions.VectorData.ProviderServices.Filter;
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Translates vector store filters into SQL++ WHERE clause strings for Query-based vector search (BHIVE/COMPOSITE).
+/// Translates vector store filters into SQL++ WHERE clause strings for Query-based vector search (Hyperscale/Composite).
 /// </summary>
 internal sealed class CouchbaseQueryFilterTranslator
 {

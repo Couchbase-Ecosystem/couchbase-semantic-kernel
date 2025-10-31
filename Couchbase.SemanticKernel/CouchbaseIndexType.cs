@@ -13,14 +13,14 @@ public enum CouchbaseIndexType
     Search,
 
     /// <summary>
-    /// BHIVE (Hyperscale Vector Index) for high-performance vector search using SQL++ queries.
+    /// Hyperscale Vector Index for high-performance vector search using SQL++ queries.
     /// Optimized for high-dimensional vectors with advanced quantization support.
     /// Best for: Pure vector search, large scale, high performance.
     /// </summary>
-    Bhive,
+    Hyperscale,
 
     /// <summary>
-    /// COMPOSITE index with vector fields for traditional approach using SQL++ queries.
+    /// Composite index with vector fields for traditional approach using SQL++ queries.
     /// Combines vector fields with scalar fields for complex filtering scenarios.
     /// Best for: Complex SQL filtering, mixed workloads.
     /// </summary>

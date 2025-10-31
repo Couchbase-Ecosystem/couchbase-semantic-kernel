@@ -18,7 +18,7 @@ public sealed class CouchbaseVectorStoreOptions
     internal CouchbaseVectorStoreOptions(CouchbaseVectorStoreOptions? source)
     {
         EmbeddingGenerator = source?.EmbeddingGenerator;
-        IndexType = source?.IndexType ?? CouchbaseIndexType.Bhive;
+        IndexType = source?.IndexType ?? CouchbaseIndexType.Hyperscale;
     }
 
     /// <summary>
@@ -28,8 +28,8 @@ public sealed class CouchbaseVectorStoreOptions
 
     /// <summary>
     /// Gets or sets the default index type to use for vector operations.
-    /// This determines whether collections will use Search (FTS), BHIVE, or COMPOSITE indexes by default.
+    /// This determines whether collections will use Search (FTS), Hyperscale, or Composite indexes by default.
     /// Individual collections can override this setting.
     /// </summary>
-    public CouchbaseIndexType IndexType { get; set; } = CouchbaseIndexType.Bhive;
+    public CouchbaseIndexType IndexType { get; set; } = CouchbaseIndexType.Hyperscale;
 }
