@@ -73,7 +73,7 @@ public class CouchbaseVectorStore : VectorStore
         return _options.IndexType switch
         {
             CouchbaseIndexType.Search => CreateSearchCollection<TKey, TRecord>(name, definition),
-            CouchbaseIndexType.Bhive or CouchbaseIndexType.Composite => CreateQueryCollection<TKey, TRecord>(name, definition),
+            CouchbaseIndexType.Hyperscale or CouchbaseIndexType.Composite => CreateQueryCollection<TKey, TRecord>(name, definition),
             _ => throw new ArgumentException($"Unsupported index type: {_options.IndexType}")
         };
     }
@@ -144,7 +144,7 @@ public class CouchbaseVectorStore : VectorStore
     }
 
     /// <summary>
-    /// Gets a collection with Couchbase Query-specific options (BHIVE/COMPOSITE).
+    /// Gets a collection with Couchbase Query-specific options (Hyperscale/Composite).
     /// </summary>
     /// <typeparam name="TKey">The data type of the record key.</typeparam>
     /// <typeparam name="TRecord">The data model to use for adding, updating and retrieving data from storage.</typeparam>
@@ -186,7 +186,7 @@ public class CouchbaseVectorStore : VectorStore
         return _options.IndexType switch
         {
             CouchbaseIndexType.Search => GetSearchDynamicCollection(name, definition),
-            CouchbaseIndexType.Bhive or CouchbaseIndexType.Composite => GetQueryDynamicCollection(name, definition),
+            CouchbaseIndexType.Hyperscale or CouchbaseIndexType.Composite => GetQueryDynamicCollection(name, definition),
             _ => throw new ArgumentException($"Unsupported index type: {_options.IndexType}")
         };
     }
@@ -210,7 +210,7 @@ public class CouchbaseVectorStore : VectorStore
     }
 
     /// <summary>
-    /// Gets a dynamic collection that uses Couchbase SQL++ queries (BHIVE/COMPOSITE) for vector operations.
+    /// Gets a dynamic collection that uses Couchbase SQL++ queries (Hyperscale/Composite) for vector operations.
     /// </summary>
     /// <param name="name">The name of the collection.</param>
     /// <param name="definition">The collection definition.</param>

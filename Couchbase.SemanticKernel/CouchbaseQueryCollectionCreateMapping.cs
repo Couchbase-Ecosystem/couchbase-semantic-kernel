@@ -11,11 +11,11 @@ namespace Couchbase.SemanticKernel;
 internal static class CouchbaseQueryCollectionCreateMapping
 {
     /// <summary>
-    /// Gets fields that should be included in BHIVE index INCLUDE clause.
+    /// Gets fields that should be included in Hyperscale index INCLUDE clause.
     /// </summary>
     /// <param name="model">The collection model.</param>
     /// <returns>List of field names to include.</returns>
-    public static List<string> GetBhiveIncludeFields(CollectionModel model)
+    public static List<string> GetHyperscaleIncludeFields(CollectionModel model)
     {
         return model.DataProperties
             .Where(p => p.IsIndexed || p.IsFullTextIndexed)
@@ -24,7 +24,7 @@ internal static class CouchbaseQueryCollectionCreateMapping
     }
 
     /// <summary>
-    /// Gets fields that should be part of COMPOSITE index keys.
+    /// Gets fields that should be part of Composite index keys.
     /// </summary>
     /// <param name="model">The collection model.</param>
     /// <param name="customScalarKeys">Optional custom scalar keys.</param>
@@ -127,11 +127,9 @@ internal static class CouchbaseQueryCollectionCreateMapping
     {
         return similarityMetric?.ToUpperInvariant() switch
         {
-            "DOT_PRODUCT" or "DOT" => "dot",
-            "L2" => "l2",
+            "DOT" => "dot",
             "EUCLIDEAN" => "euclidean",
             "COSINE" => "cosine",
-            "L2_SQUARED" => "l2_squared",
             "EUCLIDEAN_SQUARED" => "euclidean_squared",
             _ => "dot"
         };

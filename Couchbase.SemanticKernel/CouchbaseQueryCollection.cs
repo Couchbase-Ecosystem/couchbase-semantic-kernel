@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Service for storing and retrieving vector records using Couchbase SQL++ queries (BHIVE and COMPOSITE indexes).
+/// Service for storing and retrieving vector records using Couchbase SQL++ queries (Hyperscale and Composite indexes).
 /// </summary>
 /// <typeparam name="TKey">The data type of the record key.</typeparam>
 /// <typeparam name="TRecord">The data model to use for adding, updating, and retrieving data from storage.</typeparam>
@@ -37,7 +37,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         IScope scope,
         string name,
         CouchbaseQueryCollectionOptions? options = null,
-        CouchbaseIndexType indexType = CouchbaseIndexType.Bhive) : base(scope, name, options ?? new CouchbaseQueryCollectionOptions())
+        CouchbaseIndexType indexType = CouchbaseIndexType.Hyperscale) : base(scope, name, options ?? new CouchbaseQueryCollectionOptions())
     {
         _queryFilterTranslator = new CouchbaseQueryFilterTranslator();
         _queryOptions = options ?? new CouchbaseQueryCollectionOptions();
@@ -45,13 +45,13 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
     }
 
     /// <summary>
-    /// Ensures the appropriate index (BHIVE or COMPOSITE) exists for this collection.
+    /// Ensures the appropriate index (Hyperscale or Composite) exists for this collection.
     /// </summary>
     // protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
     // {
         // switch (_indexType)
         // {
-        //     case CouchbaseIndexType.Bhive:
+        //     case CouchbaseIndexType.Hyperscale:
         //     case CouchbaseIndexType.Composite:
         //         await CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken).ConfigureAwait(false);
         //         break;
@@ -62,18 +62,18 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         //     default:
         //         throw new InvalidOperationException(
         //             $"Unsupported index type '{_indexType}' for CouchbaseQueryCollection. " +
-        //             "Supported types are: BHIVE, COMPOSITE");
+        //             "Supported types are: Hyperscale, Composite");
         // }
     // }
 
     /// <summary>
-    /// Creates a vector index (BHIVE or COMPOSITE) if it doesn't already exist.
+    /// Creates a vector index (Hyperscale or Composite) if it doesn't already exist.
     /// </summary>
-    /// <param name="indexType">The type of index to create (BHIVE or COMPOSITE).</param>
+    /// <param name="indexType">The type of index to create (Hyperscale or Composite).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     private async Task CreateVectorIndexIfNotExistsAsync(CouchbaseIndexType indexType, CancellationToken cancellationToken)
     {
-        var operationName = indexType == CouchbaseIndexType.Bhive ? "CreateBhiveIndex" : "CreateCompositeIndex";
+        var operationName = indexType == CouchbaseIndexType.Hyperscale ? "CreateHyperscaleIndex" : "CreateCompositeIndex";
 
         await RunOperationAsync(operationName, async () =>
         {
@@ -103,10 +103,10 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             // Build the appropriate query based on index type
             string createIndexQuery;
 
-            if (indexType == CouchbaseIndexType.Bhive)
+            if (indexType == CouchbaseIndexType.Hyperscale)
             {
-                // BHIVE: CREATE VECTOR INDEX with INCLUDE clause
-                var includeFields = CouchbaseQueryCollectionCreateMapping.GetBhiveIncludeFields(_model);
+                // Hyperscale: CREATE VECTOR INDEX with INCLUDE clause
+                var includeFields = CouchbaseQueryCollectionCreateMapping.GetHyperscaleIncludeFields(_model);
                 var includeClause = includeFields.Any() ? $"INCLUDE ({string.Join(", ", includeFields)})" : "";
 
                 createIndexQuery = $@"
@@ -118,7 +118,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
             }
             else
             {
-                // COMPOSITE: CREATE INDEX with vector + scalar fields
+                // Composite: CREATE INDEX with vector + scalar fields
                 var indexKeys = new List<string> { $"{vectorField} VECTOR" };
 
                 // Add scalar fields for composite indexing (enables pre-filtering)

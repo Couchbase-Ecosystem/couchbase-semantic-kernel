@@ -46,7 +46,7 @@ Setup a Couchbase Cluster ([Self-Managed](https://www.couchbase.com/downloads/?f
 
 **Version Requirements:**
 - **Search (FTS) indexes**: Couchbase Server 7.6+ or Capella with [Search Service](https://docs.couchbase.com/server/current/search/search.html) enabled
-- **BHIVE and COMPOSITE indexes**: Couchbase Server 8.0+ or Capella
+- **Hyperscale and Composite indexes**: Couchbase Server 8.0+ or Capella
 
 
 ### Using the Couchbase Vector Store Connector
@@ -90,7 +90,7 @@ builder.Services.AddCouchbaseVectorStore(
 
 **Configuring Index Type**
 
-The vector store defaults to using BHIVE indexes. You can specify a different index type by passing `CouchbaseVectorStoreOptions`:
+The vector store defaults to using Hyperscale indexes. You can specify a different index type by passing `CouchbaseVectorStoreOptions`:
 
 ```csharp
 using Microsoft.SemanticKernel;
@@ -98,7 +98,7 @@ using Couchbase.SemanticKernel;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Option 1: Use BHIVE index 
+// Option 1: Use Hyperscale index 
 builder.Services.AddCouchbaseVectorStore(
     connectionString: "couchbases://your-cluster-address",
     username: "username",
@@ -107,7 +107,7 @@ builder.Services.AddCouchbaseVectorStore(
     scopeName: "scope-name",
     options: new CouchbaseVectorStoreOptions 
     { 
-        IndexType = CouchbaseIndexType.Bhive
+        IndexType = CouchbaseIndexType.Hyperscale
     });
 
 // Option 2: Use Search/FTS index
@@ -122,7 +122,7 @@ builder.Services.AddCouchbaseVectorStore(
         IndexType = CouchbaseIndexType.Search
     });
 
-// Option 3: Use COMPOSITE index
+// Option 3: Use Composite index
 builder.Services.AddCouchbaseVectorStore(
     connectionString: "couchbases://your-cluster-address",
     username: "username",
@@ -240,9 +240,9 @@ var collection = new CouchbaseSearchCollection<string, Hotel>(
     "skhotels");
 ```
 
-### Using Query Collection (BHIVE or COMPOSITE Index)
+### Using Query Collection (Hyperscale or Composite Index)
 
-For high-performance vector search with BHIVE indexes:
+For high-performance vector search with Hyperscale indexes:
 
 ```csharp
 using Couchbase.SemanticKernel;
@@ -253,13 +253,13 @@ var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
 var scope = bucket.Scope("scope-name");
 
-// Using BHIVE index (default)
+// Using Hyperscale index (default)
 var collection = new CouchbaseQueryCollection<string, Hotel>(
     scope,
     "skhotels",
-    indexType: CouchbaseIndexType.Bhive);
+    indexType: CouchbaseIndexType.Hyperscale);
 
-// Or using COMPOSITE index
+// Or using Composite index
 var collectionComposite = new CouchbaseQueryCollection<string, Hotel>(
     scope,
     "skhotels",
@@ -278,7 +278,7 @@ Couchbase offers three types of indexes for vector search:
 - **Ideal for:** E-commerce product search, travel recommendations, content discovery with multiple search criteria
 - **Requires:** Couchbase Server 7.6+ or Capella
 
-**BHIVE - Hyperscale Vector Index**
+**Hyperscale Vector Index**
 - Best for pure vector searches - content discovery, recommendations, semantic search
 - High performance with low memory footprint - designed to scale to billions of vectors
 - Optimized for concurrent operations - supports simultaneous searches and inserts
@@ -286,7 +286,7 @@ Couchbase offers three types of indexes for vector search:
 - **Ideal for:** Large-scale semantic search, recommendation systems, content discovery
 - **Requires:** Couchbase Server 8.0+ or Capella
 
-**COMPOSITE - Composite Vector Index**
+**Composite Vector Index**
 - Best for filtered vector searches - combines vector search with scalar value filtering
 - Efficient pre-filtering - scalar attributes reduce the vector comparison scope
 - **Use when:** Your queries combine vector similarity with scalar filters that eliminate large portions of data
@@ -294,9 +294,9 @@ Couchbase offers three types of indexes for vector search:
 - **Requires:** Couchbase Server 8.0+ or Capella
 
 **Choosing the Right Index Type:**
-- Start with **BHIVE** for pure vector searches and large datasets (scales to billions)
+- Start with **Hyperscale** for pure vector searches and large datasets (scales to billions)
 - Use **Search (FTS)** for hybrid search combining text and vectors
-- Choose **COMPOSITE** when scalar filters significantly reduce your search space (works well for tens of millions to billions of vectors)
+- Choose **Composite** when scalar filters significantly reduce your search space (works well for tens of millions to billions of vectors)
 
 [Detailed comparison of vector index types](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html)
 

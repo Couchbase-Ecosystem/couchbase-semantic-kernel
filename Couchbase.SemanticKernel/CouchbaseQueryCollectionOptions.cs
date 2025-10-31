@@ -5,7 +5,7 @@ using Microsoft.Extensions.VectorData;
 namespace Couchbase.SemanticKernel;
 
 /// <summary>
-/// Configuration options for Couchbase Query-based (BHIVE/COMPOSITE) vector store record collections.
+/// Configuration options for Couchbase Query-based (Hyperscale/Composite) vector store record collections.
 /// </summary>
 public class CouchbaseQueryCollectionOptions : ICouchbaseCollectionOptions
 {
@@ -40,14 +40,14 @@ public class CouchbaseQueryCollectionOptions : ICouchbaseCollectionOptions
     public string? DistanceFunction { get; set; }
 
     /// <summary>
-    /// Number of vector dimensions (required for BHIVE/COMPOSITE scenarios).
+    /// Number of vector dimensions (required for Hyperscale/Composite scenarios).
     /// </summary>
     public int? VectorDimensions { get; set; }
 
     /// <summary>
-    /// Similarity metric string (DOT_PRODUCT, L2, EUCLIDEAN, COSINE, L2_SQUARED, EUCLIDEAN_SQUARED). Defaults to DOT_PRODUCT.
+    /// Similarity metric string (DOT, COSINE, EUCLIDEAN, EUCLIDEAN_SQUARED). Defaults to DOT.
     /// </summary>
-    public string? SimilarityMetric { get; set; } = "DOT_PRODUCT";
+    public string? SimilarityMetric { get; set; } = "DOT";
 
     /// <summary>
     /// Quantization/IVF description string (e.g., "IVF1024,SQ8", "IVF,PQ32x8").
@@ -55,14 +55,14 @@ public class CouchbaseQueryCollectionOptions : ICouchbaseCollectionOptions
     public string? QuantizationSettings { get; set; } = "IVF,SQ8";
 
     /// <summary>
-    /// Number of centroids to probe (nprobe) for BHIVE ANN_DISTANCE. Defaults to 1.
+    /// Number of centroids to probe (nprobe) for Hyperscale ANN_DISTANCE. Defaults to 1.
     /// </summary>
     public int? CentroidsToProbe { get; set; } = 1;
 
     /// <summary>
-    /// Optional list of scalar storage field names to include in the COMPOSITE index
+    /// Optional list of scalar storage field names to include in the Composite index
     /// after the VECTOR column. These enable SQL++ pre-filtering before vector search.
-    /// Only used when IndexType is "COMPOSITE".
+    /// Only used when IndexType is "Composite".
     /// </summary>
     public IReadOnlyList<string>? CompositeScalarKeys { get; set; }
 
