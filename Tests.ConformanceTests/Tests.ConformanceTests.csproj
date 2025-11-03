@@ -19,7 +19,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
         <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
         <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
         <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.9.1" />
