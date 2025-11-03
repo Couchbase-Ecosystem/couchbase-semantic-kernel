@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.SemanticKernel</PackageId>
-        <Version>0.2.3</Version>
+        <Version>0.2.4</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase connector for Microsoft Semantic Kernel.</Description>
