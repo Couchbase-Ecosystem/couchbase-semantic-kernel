@@ -17,7 +17,7 @@ namespace Couchbase.SemanticKernel;
 /// </summary>
 /// <typeparam name="TKey">The data type of the record key.</typeparam>
 /// <typeparam name="TRecord">The data model to use for adding, updating, and retrieving data from storage.</typeparam>
-public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollection<TKey, TRecord>
+public abstract class CouchbaseCollectionBase<TKey, TRecord> : VectorStoreCollection<TKey, TRecord>, IKeywordHybridSearchable<TRecord>
     where TKey : notnull
     where TRecord : class
 {
