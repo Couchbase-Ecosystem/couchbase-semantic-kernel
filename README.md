@@ -160,7 +160,7 @@ kernelBuilder.Services.AddSingleton<ICluster>(sp =>
 kernelBuilder.Services.AddSingleton<IScope>(sp =>
 {
     var cluster = sp.GetRequiredService<ICluster>();
-    var bucket = cluster.BucketAsync("bucket-name").GetAwaiter().GetResult();
+    var bucket = cluster.BucketAsync("bucket-name").AsTask().GetAwaiter().GetResult();
     return bucket.Scope("scope-name");
 });
 
@@ -191,7 +191,7 @@ builder.Services.AddSingleton<ICluster>(sp =>
 builder.Services.AddSingleton<IScope>(sp =>
 {
     var cluster = sp.GetRequiredService<ICluster>();
-    var bucket = cluster.BucketAsync("bucket-name").GetAwaiter().GetResult();
+    var bucket = cluster.BucketAsync("bucket-name").AsTask().GetAwaiter().GetResult();
     return bucket.Scope("scope-name");
 });
 

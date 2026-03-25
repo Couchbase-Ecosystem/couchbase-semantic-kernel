@@ -132,7 +132,7 @@ public static class CouchbaseServiceCollectionExtensions
             };
 
             var cluster = Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
-            var bucket = cluster.BucketAsync(bucketName).GetAwaiter().GetResult();
+            var bucket = cluster.BucketAsync(bucketName).AsTask().GetAwaiter().GetResult();
             return bucket.Scope(scopeName);
         }, _ => options!, lifetime);
     }
