@@ -143,27 +143,21 @@ using Microsoft.SemanticKernel;
 using Couchbase;
 using Couchbase.KeyValue;
 
+// Create Couchbase instances
+var clusterOptions = new ClusterOptions
+{
+    ConnectionString = "couchbases://your-cluster-address",
+    UserName = "username",
+    Password = "password"
+};
+var cluster = await Cluster.ConnectAsync(clusterOptions);
+var bucket = await cluster.BucketAsync("bucket-name");
+var scope = bucket.Scope("scope-name");
+
 // Using Kernel Builder.
 var kernelBuilder = Kernel.CreateBuilder();
-kernelBuilder.Services.AddSingleton<ICluster>(sp =>
-{
-    var clusterOptions = new ClusterOptions
-    {
-        ConnectionString = "couchbases://your-cluster-address",
-        UserName = "username",
-        Password = "password"
-    };
-
-    return Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
-});
-
-kernelBuilder.Services.AddSingleton<IScope>(sp =>
-{
-    var cluster = sp.GetRequiredService<ICluster>();
-    var bucket = cluster.BucketAsync("bucket-name").AsTask().GetAwaiter().GetResult();
-    return bucket.Scope("scope-name");
-});
-
+kernelBuilder.Services.AddSingleton<ICluster>(cluster);
+kernelBuilder.Services.AddSingleton<IScope>(scope);
 kernelBuilder.AddCouchbaseVectorStore();
 ```
 
@@ -173,29 +167,21 @@ using Microsoft.SemanticKernel;
 using Couchbase.KeyValue;
 using Couchbase;
 
+// Create Couchbase instances
+var clusterOptions = new ClusterOptions
+{
+    ConnectionString = "couchbases://your-cluster-address",
+    UserName = "username",
+    Password = "password"
+};
+var cluster = await Cluster.ConnectAsync(clusterOptions);
+var bucket = await cluster.BucketAsync("bucket-name");
+var scope = bucket.Scope("scope-name");
+
 // Using IServiceCollection with ASP.NET Core.
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddSingleton<ICluster>(sp =>
-{
-    var clusterOptions = new ClusterOptions
-    {
-        ConnectionString = "couchbases://your-cluster-address",
-        UserName = "username",
-        Password = "password"
-    };
-
-    return Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
-});
-
-builder.Services.AddSingleton<IScope>(sp =>
-{
-    var cluster = sp.GetRequiredService<ICluster>();
-    var bucket = cluster.BucketAsync("bucket-name").AsTask().GetAwaiter().GetResult();
-    return bucket.Scope("scope-name");
-});
-
-// Add Couchbase Vector Store
+builder.Services.AddSingleton<ICluster>(cluster);
+builder.Services.AddSingleton<IScope>(scope);
 builder.Services.AddCouchbaseVectorStore();
 ```
 
