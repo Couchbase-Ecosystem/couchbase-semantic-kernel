@@ -27,6 +27,7 @@
 
     <ItemGroup>
         <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.2" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-rc.2.25502.107" />
         <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
         <PackageReference Include="Microsoft.SemanticKernel" Version="1.66.0" />

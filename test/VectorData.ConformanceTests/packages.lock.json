@@ -4,9 +4,9 @@
     "net8.0": {
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Direct",
-        "requested": "[9.9.1, )",
-        "resolved": "9.9.1",
-        "contentHash": "khnPyY46Yk2OTOY3z+hUsXxxl58RkMeSYxrWHr/eKYtM3Zp4UfY6Z7C75uMJTpt6l8eCJjoQ7tVj/R0Fmz/nPw=="
+        "requested": "[9.10.2, )",
+        "resolved": "9.10.2",
+        "contentHash": "xiONoJw1mjkB4PzAY1UIQrY1GJo+pEPm9lTbGTZ0uJ8JsilkQXibNKhAyGwUMT4wV7SJkVaAmk2DPkntfSPUxA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
