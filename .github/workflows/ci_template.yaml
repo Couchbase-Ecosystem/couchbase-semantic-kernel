@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           # Retrieve the preceding commit to enable 'changed-files' to create a diff.
           fetch-depth: 2
@@ -40,7 +40,7 @@ jobs:
           files: ${{ inputs.path != '' && format('{0}/**', inputs.path) || '' }}
 
       - name: .NET Cache Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
@@ -71,7 +71,7 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     
     - name: Find Solution
       id: find
@@ -100,7 +100,7 @@ jobs:
         problem-matcher: false
     
     - name: .NET Cache Packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}

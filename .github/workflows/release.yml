@@ -48,7 +48,7 @@ jobs:
           prefixes: 'v'
 
       - name: 'Checkout'
-        uses: 'actions/checkout@v5'
+        uses: 'actions/checkout@v6'
 
       - name: '.NET Setup'
         uses: 'actions/setup-dotnet@v5'
@@ -56,7 +56,7 @@ jobs:
           global-json-file: '${{ github.workspace }}/${{ env.GLOBAL_JSON_FILE }}'
 
       - name: '.NET Cache Packages'
-        uses: 'actions/cache@v4'
+        uses: 'actions/cache@v5'
         with:
           path: '~/.nuget/packages'
           key: '${{ runner.os }}-nuget-${{ hashFiles(fromJson(env.CACHE_PATTERNS)) }}'
@@ -83,7 +83,7 @@ jobs:
           -o "${{ github.workspace }}/${{ env.PACKAGE_PATH }}"
 
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v5'
+        uses: 'actions/upload-artifact@v6'
         with:
           name: 'packages'
           path: '${{ github.workspace }}/${{ env.PACKAGE_PATH }}'
@@ -102,7 +102,7 @@ jobs:
           # - { name: 'GitHub', source: 'https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json', key: 'GITHUB_TOKEN'  }
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@v5'
+        uses: 'actions/checkout@v6'
 
       - name: '.NET Setup'
         uses: 'actions/setup-dotnet@v5'
@@ -110,7 +110,7 @@ jobs:
           global-json-file: '${{ github.workspace }}/${{ env.GLOBAL_JSON_FILE }}'
 
       - name: 'Download Artifacts'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: 'packages'
           path: '${{ github.workspace }}/${{ env.PACKAGE_PATH }}'
