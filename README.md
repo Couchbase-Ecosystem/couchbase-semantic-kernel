@@ -2,7 +2,7 @@
 
 # Couchbase connector for Microsoft Semantic Kernel
 
-Repository for `Couchbase.SemanticKernel` the official Couchbase [Vector Store Connector](https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/?pivots=programming-language-csharp) for
+Repository for `Couchbase.VectorData` the official Couchbase [Vector Store Connector](https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/?pivots=programming-language-csharp) for
 [Microsoft Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/overview/).
 
 ## Introduction
@@ -54,14 +54,14 @@ Setup a Couchbase Cluster ([Self-Managed](https://www.couchbase.com/downloads/?f
 Add the Couchbase Vector Store connector NuGet package to your project.
 
 ```dotnetcli
-dotnet add package CouchbaseConnector.SemanticKernel --prerelease
+dotnet add package CouchbaseConnector.VectorData --prerelease
 ```
 
 You can add the vector store to the dependency injection container available on the `KernelBuilder` or to the `IServiceCollection` dependency injection container using extension methods provided by Semantic Kernel.
 
 ```csharp
 using Microsoft.SemanticKernel;
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 
 // Using Kernel Builder.
 var kernelBuilder = Kernel
@@ -76,7 +76,7 @@ var kernelBuilder = Kernel
 
 ```csharp
 using Microsoft.SemanticKernel;
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 
 // Using IServiceCollection with ASP.NET Core.
 var builder = WebApplication.CreateBuilder(args);
@@ -94,7 +94,7 @@ The vector store defaults to using Hyperscale indexes. You can specify a differe
 
 ```csharp
 using Microsoft.SemanticKernel;
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -190,7 +190,7 @@ You can construct a Couchbase Vector Store instance directly.
 ```csharp
 using Couchbase;
 using Couchbase.KeyValue;
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 
 var clusterOptions = new ClusterOptions
 {
@@ -213,7 +213,7 @@ It is possible to construct a direct reference to a named collection.
 For Full-Text Search indexes and hybrid search scenarios:
 
 ```csharp
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 using Couchbase;
 using Couchbase.KeyValue;
 
@@ -231,7 +231,7 @@ var collection = new CouchbaseSearchCollection<string, Hotel>(
 For high-performance vector search with Hyperscale indexes:
 
 ```csharp
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 using Couchbase;
 using Couchbase.KeyValue;
 
@@ -293,7 +293,7 @@ The Couchbase connector will use `System.Text.Json.JsonSerializer` to do mapping
 Usage of the `JsonPropertyNameAttribute` is supported if a different storage name to the data model property name is required. It is also possible to use a custom `JsonSerializerOptions` instance with a customized property naming policy.
 
 ```csharp
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 using Couchbase.KeyValue;
 using System.Text.Json;
 

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Couchbase;
-using Couchbase.SemanticKernel;
+using Couchbase.KeyValue;
+using Couchbase.VectorData;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.VectorData;
@@ -19,6 +20,8 @@ public abstract class Program
 {
     private static IConfigurationRoot? _configuration;
     private static IEmbeddingGenerator<string, Embedding<float>>? _embeddingGenerator;
+    private static ICluster? _cluster;
+    private static IScope? _scope;
 
     public static async Task Main(string[] args)
     {
@@ -30,6 +33,7 @@ public abstract class Program
             // Setup configuration and services
             SetupConfiguration();
             SetupEmbeddingGenerator();
+            await ConnectToCouchbaseAsync();
 
             // Step 1: Ingest data into Couchbase vector store
             await IngestDataIntoCouchbaseVectorStoreAsync();
@@ -51,9 +55,43 @@ public abstract class Program
         }
         finally
         {
+            if (_cluster is not null)
+            {
+                await _cluster.DisposeAsync();
+            }
+
             Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
         }
+    }
+
+    /// <summary>
+    /// Connects to the Couchbase cluster once and caches the scope for reuse across all steps.
+    /// </summary>
+    private static async Task ConnectToCouchbaseAsync()
+    {
+        var connectionString = _configuration?["Couchbase:ConnectionString"];
+        var username = _configuration?["Couchbase:Username"];
+        var password = _configuration?["Couchbase:Password"];
+        var bucketName = _configuration?["Couchbase:BucketName"];
+        var scopeName = _configuration?["Couchbase:ScopeName"];
+
+        if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) ||
+            string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(scopeName))
+        {
+            throw new InvalidOperationException(
+                "Couchbase configuration missing. Please set ConnectionString, Username, Password, BucketName, ScopeName in appsettings.json or user secrets.");
+        }
+
+        _cluster = await Cluster.ConnectAsync(new ClusterOptions
+        {
+            ConnectionString = connectionString,
+            UserName = username,
+            Password = password
+        });
+
+        var bucket = await _cluster.BucketAsync(bucketName);
+        _scope = await bucket.ScopeAsync(scopeName);
     }
 
     /// <summary>
@@ -110,24 +148,11 @@ public abstract class Program
     private static async Task CreateHyperscaleIndexAsync()
     {
         Console.WriteLine("\nStep 2: Creating Hyperscale vector index manually...");
-        
-        var connectionString = _configuration?["Couchbase:ConnectionString"];
-        var username = _configuration?["Couchbase:Username"];
-        var password = _configuration?["Couchbase:Password"];
+
         var bucketName = _configuration?["Couchbase:BucketName"];
         var scopeName = _configuration?["Couchbase:ScopeName"];
         var collectionName = _configuration?["Couchbase:CollectionName"];
-
-        // Connect to Couchbase cluster
-        var cluster = await Cluster.ConnectAsync(new ClusterOptions
-        {
-            ConnectionString = connectionString!,
-            UserName = username!,
-            Password = password!
-        });
-
-        var bucket = await cluster.BucketAsync(bucketName!);
-        var scope = await bucket.ScopeAsync(scopeName!);
+        var scope = _scope ?? throw new InvalidOperationException("Not connected to Couchbase. Call ConnectToCouchbaseAsync first.");
 
         // Create Hyperscale index SQL
         var indexName = "hyperscale_glossary_index";
@@ -217,37 +242,21 @@ public abstract class Program
     /// <summary>
     /// Get Couchbase vector store collection with proper configuration.
     /// </summary>
-    private static async Task<VectorStoreCollection<string, Glossary>> GetCouchbaseVectorStoreCollectionAsync()
+    private static Task<VectorStoreCollection<string, Glossary>> GetCouchbaseVectorStoreCollectionAsync()
     {
-        var connectionString = _configuration!["Couchbase:ConnectionString"];
-        var username = _configuration["Couchbase:Username"];
-        var password = _configuration["Couchbase:Password"];
-        var bucketName = _configuration["Couchbase:BucketName"];
-        var scopeName = _configuration["Couchbase:ScopeName"];
-        var collectionName = _configuration["Couchbase:CollectionName"];
+        var collectionName = _configuration!["Couchbase:CollectionName"];
 
-        if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) ||
-            string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(scopeName) || string.IsNullOrEmpty(collectionName))
+        if (string.IsNullOrEmpty(collectionName))
         {
             throw new InvalidOperationException(
-                "Couchbase configuration missing. Please set ConnectionString, Username, Password, BucketName, ScopeName, CollectionName in appsettings.json or user secrets.");
+                "Couchbase configuration missing. Please set CollectionName in appsettings.json or user secrets.");
         }
 
-        // Connect to Couchbase cluster
-        var cluster = await Cluster.ConnectAsync(new ClusterOptions
-        {
-            ConnectionString = connectionString,
-            UserName = username,
-            Password = password
-        });
-
-        var bucket = await cluster.BucketAsync(bucketName);
-        var scope = await bucket.ScopeAsync(scopeName);
+        var scope = _scope ?? throw new InvalidOperationException("Not connected to Couchbase. Call ConnectToCouchbaseAsync first.");
 
         // Configure Hyperscale index options
         var collectionOptions = new CouchbaseQueryCollectionOptions
         {
-            IndexName = "hyperscale_glossary_index",
             SimilarityMetric = "cosine"
         };
 
@@ -255,7 +264,7 @@ public abstract class Program
         var vectorStore = new CouchbaseVectorStore(scope);
         var collection = vectorStore.GetCollection<string, Glossary>(collectionName, collectionOptions);
 
-        return collection;
+        return Task.FromResult(collection);
     }
 
     /// <summary>

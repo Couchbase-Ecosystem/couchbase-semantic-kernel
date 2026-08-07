@@ -47,7 +47,7 @@ jobs:
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: .NET Restore
-        run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }}
+        run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.VectorData.sln' }}
 
       - name: Install latest .NET Format tool
         shell: bash

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
@@ -13,22 +13,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit" Version="2.9.0" />
+        <PackageReference Include="xunit" Version="2.9.3" />
         <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.9.0">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-        <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
-        <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.2" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0-rc.2.25502.107" />
+        <PackageReference Include="CouchbaseNetClient" Version="3.9.4" />
+        <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="10.8.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.8.3" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+        <PackageReference Include="Microsoft.Extensions.VectorData.ConformanceTests" Version="10.8.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../Couchbase.SemanticKernel/Couchbase.SemanticKernel.csproj" />
-        <ProjectReference Include="../test/VectorData.ConformanceTests/VectorData.ConformanceTests.csproj" />
+        <ProjectReference Include="../Couchbase.VectorData/Couchbase.VectorData.csproj" />
     </ItemGroup>
 
     <ItemGroup>
