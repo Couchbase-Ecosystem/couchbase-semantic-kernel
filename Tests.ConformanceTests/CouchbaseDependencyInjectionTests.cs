@@ -14,8 +14,16 @@ public class CouchbaseDependencyInjectionTests
         CouchbaseVectorStore,
         CouchbaseQueryCollection<string, DependencyInjectionTests<string>.Record>,
         string,
-        DependencyInjectionTests<string>.Record>
+        DependencyInjectionTests<string>.Record>, IAsyncLifetime
 {
+    // This class has no IClassFixture, so nothing else starts the shared test store.
+    // ScopeProvider below reads CouchbaseTestStore.Instance.Scope, which throws until
+    // the store is started, so start/stop it here. The store is reference-counted, so
+    // this is safe alongside other test classes using the same singleton.
+    public Task InitializeAsync() => Support.CouchbaseTestStore.Instance.ReferenceCountingStartAsync();
+
+    public Task DisposeAsync() => Support.CouchbaseTestStore.Instance.ReferenceCountingStopAsync();
+
     private const string ConnectionString = "couchbase://localhost";
     private const string Username = "Administrator";
     private const string Password = "password";

@@ -45,13 +45,15 @@ internal sealed class CouchbaseTestStore : TestStore
 
     /// <summary>
     /// Couchbase collection names allow only [A-Za-z0-9_-%], must not start with '_' or '%',
-    /// and are limited to 251 characters.
+    /// and are limited to 251 characters. Any other character is replaced with '_'; '%' is
+    /// deliberately not preserved, since it is a percent-encoding hazard in REST paths.
     /// </summary>
     public override string AdjustCollectionName(string name)
     {
         var sanitized = new string(name.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' ? c : '_').ToArray());
 
-        if (sanitized.Length > 0 && (sanitized[0] == '_' || sanitized[0] == '%'))
+        // A leading '_' is reachable: any name starting with an invalid character becomes one.
+        if (sanitized.Length > 0 && sanitized[0] == '_')
         {
             sanitized = "c" + sanitized;
         }
@@ -75,7 +77,7 @@ internal sealed class CouchbaseTestStore : TestStore
                     $"Bucket '{BucketName}' not found. Create it manually, or set COUCHBASE_BUCKET.");
             }
 
-            _scope = _bucket.Scope(ScopeName);
+            _scope = await _bucket.ScopeAsync(ScopeName);
 
             DefaultVectorStore = new CouchbaseVectorStore(_scope, new CouchbaseVectorStoreOptions());
         }
