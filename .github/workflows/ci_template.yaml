@@ -30,7 +30,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
-          problem-matcher: false
 
 
       - name: Get Changed Files
@@ -97,7 +96,6 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
-        problem-matcher: false
     
     - name: .NET Cache Packages
       uses: actions/cache@v5
