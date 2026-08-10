@@ -144,15 +144,12 @@ using Couchbase;
 using Couchbase.KeyValue;
 
 // Create Couchbase instances
-var clusterOptions = new ClusterOptions
-{
-    ConnectionString = "couchbases://your-cluster-address",
-    UserName = "username",
-    Password = "password"
-};
-var cluster = await Cluster.ConnectAsync(clusterOptions);
+var cluster = await Cluster.ConnectAsync(
+    "couchbases://your-cluster-address",
+    "username",
+    "password");
 var bucket = await cluster.BucketAsync("bucket-name");
-var scope = bucket.Scope("scope-name");
+var scope = await bucket.ScopeAsync("scope-name");
 
 // Using Kernel Builder.
 var kernelBuilder = Kernel.CreateBuilder();
@@ -168,15 +165,12 @@ using Couchbase.KeyValue;
 using Couchbase;
 
 // Create Couchbase instances
-var clusterOptions = new ClusterOptions
-{
-    ConnectionString = "couchbases://your-cluster-address",
-    UserName = "username",
-    Password = "password"
-};
-var cluster = await Cluster.ConnectAsync(clusterOptions);
+var cluster = await Cluster.ConnectAsync(
+    "couchbases://your-cluster-address",
+    "username",
+    "password");
 var bucket = await cluster.BucketAsync("bucket-name");
-var scope = bucket.Scope("scope-name");
+var scope = await bucket.ScopeAsync("scope-name");
 
 // Using IServiceCollection with ASP.NET Core.
 var builder = WebApplication.CreateBuilder(args);
@@ -192,16 +186,13 @@ using Couchbase;
 using Couchbase.KeyValue;
 using Couchbase.VectorData;
 
-var clusterOptions = new ClusterOptions
-{
-    ConnectionString = "couchbases://your-cluster-address",
-    UserName = "username",
-    Password = "password"
-};
+var cluster = await Cluster.ConnectAsync(
+    "couchbases://your-cluster-address",
+    "username",
+    "password");
 
-var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
-var scope = bucket.Scope("scope-name");
+var scope = await bucket.ScopeAsync("scope-name");
 
 var vectorStore = new CouchbaseVectorStore(scope);
 ```
@@ -219,7 +210,7 @@ using Couchbase.KeyValue;
 
 var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
-var scope = bucket.Scope("scope-name");
+var scope = await bucket.ScopeAsync("scope-name");
 
 var collection = new CouchbaseSearchCollection<string, Hotel>(
     scope,
@@ -237,7 +228,7 @@ using Couchbase.KeyValue;
 
 var cluster = await Cluster.ConnectAsync(clusterOptions);
 var bucket = await cluster.BucketAsync("bucket-name");
-var scope = bucket.Scope("scope-name");
+var scope = await bucket.ScopeAsync("scope-name");
 
 // Using Hyperscale index (default)
 var collection = new CouchbaseQueryCollection<string, Hotel>(
