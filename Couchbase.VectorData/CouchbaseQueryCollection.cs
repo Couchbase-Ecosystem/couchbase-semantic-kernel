@@ -67,6 +67,16 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
     // }
 
     /// <summary>
+    /// Creates the vector index (Hyperscale or Composite) configured for this collection, if it does not already exist.
+    /// </summary>
+    /// <remarks>
+    /// Must be called after records have been upserted, as the index is trained on existing vectors.
+    /// </remarks>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public Task EnsureVectorIndexExistsAsync(CancellationToken cancellationToken = default)
+        => CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken);
+
+    /// <summary>
     /// Creates a vector index (Hyperscale or Composite) if it doesn't already exist.
     /// </summary>
     /// <param name="indexType">The type of index to create (Hyperscale or Composite).</param>

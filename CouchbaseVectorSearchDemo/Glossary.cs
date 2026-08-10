@@ -14,13 +14,13 @@ internal sealed class Glossary
     [VectorStoreKey]
     public string Key { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Category { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Term { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Definition { get; set; } = string.Empty;
 
     [VectorStoreVector(1536)]

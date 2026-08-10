@@ -1,27 +1,32 @@
 using System.Reflection;
 using Couchbase;
-using Couchbase.KeyValue;
 using Couchbase.VectorData;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.VectorData;
 using OpenAI;
-using OpenAI.Embeddings;
-using EmbeddingGenerationOptions = Microsoft.Extensions.AI.EmbeddingGenerationOptions;
 
 namespace CouchbaseVectorSearchDemo;
 
 /// <summary>
 /// Couchbase Vector Search Demo
-/// 
+///
 /// This example demonstrates how to use CouchbaseQueryCollection with Hyperscale index for vector search.
 /// </summary>
 public abstract class Program
 {
+    private const string IndexName = "hyperscale_glossary_index";
+
     private static IConfigurationRoot? _configuration;
     private static IEmbeddingGenerator<string, Embedding<float>>? _embeddingGenerator;
     private static ICluster? _cluster;
-    private static IScope? _scope;
+    private static CouchbaseQueryCollection<string, Glossary>? _collection;
+
+    private static IEmbeddingGenerator<string, Embedding<float>> EmbeddingGenerator
+        => _embeddingGenerator ?? throw new InvalidOperationException("Embedding generator not initialized.");
+
+    private static CouchbaseQueryCollection<string, Glossary> Collection
+        => _collection ?? throw new InvalidOperationException("Not connected to Couchbase.");
 
     public static async Task Main(string[] args)
     {
@@ -66,7 +71,7 @@ public abstract class Program
     }
 
     /// <summary>
-    /// Connects to the Couchbase cluster once and caches the scope for reuse across all steps.
+    /// Connects to the Couchbase cluster and creates the vector store collection, once, for reuse across all steps.
     /// </summary>
     private static async Task ConnectToCouchbaseAsync()
     {
@@ -75,23 +80,28 @@ public abstract class Program
         var password = _configuration?["Couchbase:Password"];
         var bucketName = _configuration?["Couchbase:BucketName"];
         var scopeName = _configuration?["Couchbase:ScopeName"];
+        var collectionName = _configuration?["Couchbase:CollectionName"];
 
         if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) ||
-            string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(scopeName))
+            string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(scopeName) || string.IsNullOrEmpty(collectionName))
         {
             throw new InvalidOperationException(
-                "Couchbase configuration missing. Please set ConnectionString, Username, Password, BucketName, ScopeName in appsettings.json or user secrets.");
+                "Couchbase configuration missing. Please set ConnectionString, Username, Password, BucketName, ScopeName, CollectionName in appsettings.json or user secrets.");
         }
 
-        _cluster = await Cluster.ConnectAsync(new ClusterOptions
-        {
-            ConnectionString = connectionString,
-            UserName = username,
-            Password = password
-        });
+        _cluster = await Cluster.ConnectAsync(connectionString, username, password);
 
         var bucket = await _cluster.BucketAsync(bucketName);
-        _scope = await bucket.ScopeAsync(scopeName);
+        var scope = await bucket.ScopeAsync(scopeName);
+
+        var collectionOptions = new CouchbaseQueryCollectionOptions
+        {
+            IndexName = IndexName,
+            SimilarityMetric = "cosine"
+        };
+
+        var vectorStore = new CouchbaseVectorStore(scope);
+        _collection = (CouchbaseQueryCollection<string, Glossary>)vectorStore.GetCollection<string, Glossary>(collectionName, collectionOptions);
     }
 
     /// <summary>
@@ -120,9 +130,10 @@ public abstract class Program
                 "OpenAI API key missing. Please set OpenAI:ApiKey in appsettings.json or user secrets. ");
         }
 
-        // Use OpenAI client to create the embedding generator
-        var embeddingClient = new OpenAIClient(openAiApiKey).GetEmbeddingClient(openAiModel);
-        _embeddingGenerator = new OpenAiEmbeddingGeneratorWrapper(embeddingClient);
+        _embeddingGenerator = new OpenAIClient(openAiApiKey)
+            .GetEmbeddingClient(openAiModel)
+            .AsIEmbeddingGenerator();
+
         Console.WriteLine($"Using OpenAI model: {openAiModel}");
     }
 
@@ -133,48 +144,34 @@ public abstract class Program
     {
         Console.WriteLine("Step 1: Ingesting data into Couchbase vector store...");
 
-        // Get Couchbase vector store collection
-        var collection = await GetCouchbaseVectorStoreCollectionAsync();
+        var glossaryEntries = CreateGlossaryEntries().ToList();
 
-        // Ingest data 
-        await IngestDataIntoVectorStoreAsync(collection, _embeddingGenerator!);
+        // Generate all embeddings in a single batched request.
+        var embeddings = await EmbeddingGenerator.GenerateAsync(glossaryEntries.Select(entry => entry.Definition));
+        for (var i = 0; i < glossaryEntries.Count; i++)
+        {
+            glossaryEntries[i].DefinitionEmbedding = embeddings[i].Vector;
+        }
+
+        await Collection.UpsertAsync(glossaryEntries);
 
         Console.WriteLine("Data ingestion completed");
     }
 
     /// <summary>
-    /// Create Hyperscale vector index manually after documents are inserted.
+    /// Create Hyperscale vector index after documents are inserted.
     /// </summary>
     private static async Task CreateHyperscaleIndexAsync()
     {
-        Console.WriteLine("\nStep 2: Creating Hyperscale vector index manually...");
+        Console.WriteLine("\nStep 2: Creating Hyperscale vector index...");
 
-        var bucketName = _configuration?["Couchbase:BucketName"];
-        var scopeName = _configuration?["Couchbase:ScopeName"];
-        var collectionName = _configuration?["Couchbase:CollectionName"];
-        var scope = _scope ?? throw new InvalidOperationException("Not connected to Couchbase. Call ConnectToCouchbaseAsync first.");
-
-        // Create Hyperscale index SQL
-        var indexName = "hyperscale_glossary_index";
-        var createIndexQuery = $@"
-            CREATE VECTOR INDEX `{indexName}` 
-            ON `{bucketName}`.`{scopeName}`.`{collectionName}` (DefinitionEmbedding VECTOR) 
-            INCLUDE (Category, Term, Definition)
-            USING GSI WITH {{
-                ""dimension"": 1536,
-                ""similarity"": ""cosine"", 
-                ""description"": ""IVF,SQ8""
-            }}";
-
+        // The connector builds and runs the CREATE VECTOR INDEX statement, deriving the dimensions,
+        // similarity metric and INCLUDE fields from the record model and collection options.
         try
         {
             Console.WriteLine("Executing Hyperscale index creation query...");
-            await scope.QueryAsync<dynamic>(createIndexQuery);
-            Console.WriteLine($"Hyperscale vector index '{indexName}' created successfully!");
-        }
-        catch (Exception ex) when (ex.Message.Contains("already exists"))
-        {
-            Console.WriteLine($"Hyperscale vector index '{indexName}' already exists.");
+            await Collection.EnsureVectorIndexExistsAsync();
+            Console.WriteLine($"Hyperscale vector index '{IndexName}' is ready.");
         }
         catch (Exception ex)
         {
@@ -184,41 +181,32 @@ public abstract class Program
     }
 
     /// <summary>
-    /// Perform basic vector search - following SK pattern from Step2_Vector_Search.
+    /// Perform basic vector search.
     /// </summary>
     private static async Task SearchCouchbaseVectorStoreAsync()
     {
         Console.WriteLine("\nStep 3: Performing vector search...");
 
-        var collection = await GetCouchbaseVectorStoreCollectionAsync();
+        var searchVector = (await EmbeddingGenerator.GenerateAsync("What is an Application Programming Interface?")).Vector;
 
-        // Search the vector store using the same pattern as SK examples
-        var searchResultItem = await SearchVectorStoreAsync(
-            collection,
-            "What is an Application Programming Interface?",
-            _embeddingGenerator!);
+        var searchResultItem = (await Collection.SearchAsync(searchVector, top: 1).ToListAsync()).FirstOrDefault();
 
-        // Write the search result with its score to the console
-        Console.WriteLine($"   Found: {searchResultItem.Record.Term}");
-        Console.WriteLine($"   Definition: {searchResultItem.Record.Definition}");
-        Console.WriteLine($"   Score: {searchResultItem.Score:F4}");
+        Console.WriteLine($"   Found: {searchResultItem?.Record.Term}");
+        Console.WriteLine($"   Definition: {searchResultItem?.Record.Definition}");
+        Console.WriteLine($"   Score: {searchResultItem?.Score:F4}");
     }
 
     /// <summary>
-    /// Perform filtered vector search - following SK pattern from Step2_Vector_Search.
+    /// Perform filtered vector search.
     /// </summary>
     private static async Task SearchCouchbaseVectorStoreWithFilteringAsync()
     {
         Console.WriteLine("\nStep 4: Performing filtered vector search...");
 
-        var collection = await GetCouchbaseVectorStoreCollectionAsync();
-
-        // Generate an embedding from the search string
-        var searchString = "How do I provide additional context to an LLM?";
-        var searchVector = (await _embeddingGenerator!.GenerateAsync(searchString)).Vector;
+        var searchVector = (await EmbeddingGenerator.GenerateAsync("How do I provide additional context to an LLM?")).Vector;
 
         // Search the store with a filter and get the single most relevant result
-        var searchResultItems = await collection.SearchAsync(
+        var searchResultItems = await Collection.SearchAsync(
             searchVector,
             top: 1,
             new VectorSearchOptions<Glossary>
@@ -240,78 +228,7 @@ public abstract class Program
     }
 
     /// <summary>
-    /// Get Couchbase vector store collection with proper configuration.
-    /// </summary>
-    private static Task<VectorStoreCollection<string, Glossary>> GetCouchbaseVectorStoreCollectionAsync()
-    {
-        var collectionName = _configuration!["Couchbase:CollectionName"];
-
-        if (string.IsNullOrEmpty(collectionName))
-        {
-            throw new InvalidOperationException(
-                "Couchbase configuration missing. Please set CollectionName in appsettings.json or user secrets.");
-        }
-
-        var scope = _scope ?? throw new InvalidOperationException("Not connected to Couchbase. Call ConnectToCouchbaseAsync first.");
-
-        // Configure Hyperscale index options
-        var collectionOptions = new CouchbaseQueryCollectionOptions
-        {
-            SimilarityMetric = "cosine"
-        };
-
-        // Create vector store and get collection
-        var vectorStore = new CouchbaseVectorStore(scope);
-        var collection = vectorStore.GetCollection<string, Glossary>(collectionName, collectionOptions);
-
-        return Task.FromResult(collection);
-    }
-
-    /// <summary>
-    /// Ingest data into the given collection
-    /// </summary>
-    /// <param name="collection">The collection to ingest data into.</param>
-    /// <param name="embeddingGenerator">The service to use for generating embeddings.</param>
-    /// <returns>The keys of the upserted records.</returns>
-    private static async Task IngestDataIntoVectorStoreAsync(VectorStoreCollection<string, Glossary> collection,
-        IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
-    {
-        // Create glossary entries and generate embeddings for them
-        var glossaryEntries = CreateGlossaryEntries().ToList();
-        var tasks = glossaryEntries.Select(entry => Task.Run(async () =>
-        {
-            entry.DefinitionEmbedding = (await embeddingGenerator.GenerateAsync(entry.Definition)).Vector;
-        }));
-        await Task.WhenAll(tasks);
-
-        // Upsert the glossary entries into the collection and return their keys
-        await collection.UpsertAsync(glossaryEntries);
-    }
-
-    /// <summary>
-    /// Search the given collection for the most relevant result - following SK Step2_Vector_Search pattern.
-    /// </summary>
-    /// <param name="collection">The collection to search.</param>
-    /// <param name="searchString">The string to search matches for.</param>
-    /// <param name="embeddingGenerator">The service to generate embeddings with.</param>
-    /// <returns>The top search result.</returns>
-    private static async Task<VectorSearchResult<Glossary>?> SearchVectorStoreAsync(
-        VectorStoreCollection<string, Glossary> collection, 
-        string searchString, 
-        IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
-    {
-        // Generate an embedding from the search string
-        var searchVector = (await embeddingGenerator.GenerateAsync(searchString)).Vector;
-
-        // Search the store and get the single most relevant result
-        var searchResultItems = await collection.SearchAsync(
-            searchVector,
-            top: 1).ToListAsync();
-        return searchResultItems.FirstOrDefault();
-    }
-
-    /// <summary>
-    /// Create some sample glossary entries - same as SK examples.
+    /// Create some sample glossary entries.
     /// </summary>
     /// <returns>A list of sample glossary entries.</returns>
     private static IEnumerable<Glossary> CreateGlossaryEntries()
@@ -363,42 +280,5 @@ public abstract class Program
             Term = "LLM",
             Definition = "Large language model. A type of artificial intelligence algorithm that is designed to understand and generate human language."
         };
-    }
-}
-
-/// <summary>
-/// Wrapper to adapt OpenAI EmbeddingClient to IEmbeddingGenerator interface.
-/// Uses the GenerateEmbeddingsAsync method from EmbeddingClient.
-/// </summary>
-internal class OpenAiEmbeddingGeneratorWrapper(EmbeddingClient embeddingClient)
-    : IEmbeddingGenerator<string, Embedding<float>>
-{
-    private readonly EmbeddingClient _embeddingClient = embeddingClient ?? throw new ArgumentNullException(nameof(embeddingClient));
-
-    public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-        IEnumerable<string> values, 
-        EmbeddingGenerationOptions? options = null, 
-        CancellationToken cancellationToken = default)
-    {
-        var inputList = values.ToList();
-        
-        // Use the GenerateEmbeddingsAsync method from EmbeddingClient
-        var response = await _embeddingClient.GenerateEmbeddingsAsync(inputList, cancellationToken: cancellationToken);
-        
-        // Convert OpenAIEmbeddingCollection to the expected format
-        var embeddings = response.Value.Select(embedding => 
-            new Embedding<float>(embedding.ToFloats())).ToList();
-
-        return new GeneratedEmbeddings<Embedding<float>>(embeddings);
-    }
-
-    public void Dispose()
-    {
-        // Not implemented
-    }
-
-    public object? GetService(Type serviceType, object? serviceKey = null)
-    {
-        throw new NotImplementedException();
     }
 }
