@@ -30,7 +30,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
-          problem-matcher: false
 
 
       - name: Get Changed Files
@@ -47,7 +46,7 @@ jobs:
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: .NET Restore
-        run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.SemanticKernel.sln' }}
+        run: dotnet restore ${{ inputs.path != '' && inputs.path || 'Couchbase.VectorData.sln' }}
 
       - name: Install latest .NET Format tool
         shell: bash
@@ -97,7 +96,6 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
-        problem-matcher: false
     
     - name: .NET Cache Packages
       uses: actions/cache@v5

@@ -14,15 +14,15 @@ internal sealed class Glossary
     [VectorStoreKey]
     public string Key { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Category { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Term { get; set; } = string.Empty;
 
-    [VectorStoreData]
+    [VectorStoreData(IsIndexed = true)]
     public string Definition { get; set; } = string.Empty;
 
-    [VectorStoreVector(Dimensions: 1536)]
+    [VectorStoreVector(1536)]
     public ReadOnlyMemory<float> DefinitionEmbedding { get; set; }
 }

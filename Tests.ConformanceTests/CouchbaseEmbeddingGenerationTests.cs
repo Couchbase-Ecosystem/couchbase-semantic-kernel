@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System.Diagnostics.CodeAnalysis;
 using Couchbase.ConformanceTests.Support;
-using Couchbase.SemanticKernel;
+using Couchbase.VectorData;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
@@ -12,37 +11,19 @@ using Xunit;
 
 namespace Couchbase.ConformanceTests;
 
-public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests.StringVectorFixture stringVectorFixture, CouchbaseEmbeddingGenerationTests.RomOfFloatVectorFixture romOfFloatVectorFixture)
-    : EmbeddingGenerationTests<string>(stringVectorFixture, romOfFloatVectorFixture), IClassFixture<CouchbaseEmbeddingGenerationTests.StringVectorFixture>, IClassFixture<CouchbaseEmbeddingGenerationTests.RomOfFloatVectorFixture>
+public class CouchbaseEmbeddingGenerationTests(
+    CouchbaseEmbeddingGenerationTests.StringVectorFixture stringVectorFixture,
+    CouchbaseEmbeddingGenerationTests.RomOfFloatVectorFixture romOfFloatVectorFixture)
+    : EmbeddingGenerationTests<string>(stringVectorFixture, romOfFloatVectorFixture),
+        IClassFixture<CouchbaseEmbeddingGenerationTests.StringVectorFixture>,
+        IClassFixture<CouchbaseEmbeddingGenerationTests.RomOfFloatVectorFixture>
 {
     public new class StringVectorFixture : EmbeddingGenerationTests<string>.StringVectorFixture
     {
         public override TestStore TestStore => CouchbaseTestStore.Instance;
 
-        public override string CollectionName => "embedding_generation_tests";
-
-        public override VectorStore CreateVectorStore(IEmbeddingGenerator? embeddingGenerator = null)
+        public override VectorStore CreateVectorStore(IEmbeddingGenerator? embeddingGenerator)
             => CouchbaseTestStore.Instance.GetVectorStore(new CouchbaseVectorStoreOptions { EmbeddingGenerator = embeddingGenerator });
-
-        /// <summary>
-        /// Override to use Couchbase test collection with IndexName configured for search operations.
-        /// </summary>
-        public override VectorStoreCollection<string, TRecord> GetCollection<TRecord>(
-            VectorStore vectorStore,
-            string collectionName,
-            VectorStoreCollectionDefinition? recordDefinition = null)
-            where TRecord : class
-        {
-            // Use the Couchbase-specific collection with IndexName configured
-            var couchbaseVectorStore = (CouchbaseVectorStore)vectorStore;
-            var options = new CouchbaseSearchCollectionOptions
-            {
-                IndexName = CouchbaseTestStore.TestIndexName,
-                Definition = recordDefinition
-            };
-
-            return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
-        }
 
         public override Func<IServiceCollection, IServiceCollection>[] DependencyInjectionStoreRegistrationDelegates =>
         [
@@ -55,7 +36,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
         [
             services => services
                 .AddSingleton(CouchbaseTestStore.Instance.Scope)
-                .AddCouchbaseSearchCollection<string, RecordWithAttributes>(this.CollectionName)
+                .AddCouchbaseQueryCollection<string, RecordWithAttributes>(this.CollectionName)
         ];
     }
 
@@ -63,30 +44,8 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
     {
         public override TestStore TestStore => CouchbaseTestStore.Instance;
 
-        public override string CollectionName => "search_only_embedding_generation_tests";
-
-        public override VectorStore CreateVectorStore(IEmbeddingGenerator? embeddingGenerator = null)
+        public override VectorStore CreateVectorStore(IEmbeddingGenerator? embeddingGenerator)
             => CouchbaseTestStore.Instance.GetVectorStore(new CouchbaseVectorStoreOptions { EmbeddingGenerator = embeddingGenerator });
-
-        /// <summary>
-        /// Override to use Couchbase test collection with IndexName configured for search operations.
-        /// </summary>
-        public override VectorStoreCollection<string, TRecord> GetCollection<TRecord>(
-            VectorStore vectorStore,
-            string collectionName,
-            VectorStoreCollectionDefinition? recordDefinition = null)
-            where TRecord : class
-        {
-            // Use the Couchbase-specific collection with IndexName configured
-            var couchbaseVectorStore = (CouchbaseVectorStore)vectorStore;
-            var options = new CouchbaseSearchCollectionOptions
-            {
-                IndexName = CouchbaseTestStore.TestIndexName,
-                Definition = recordDefinition
-            };
-
-            return couchbaseVectorStore.GetCollection<string, TRecord>(collectionName, options);
-        }
 
         public override Func<IServiceCollection, IServiceCollection>[] DependencyInjectionStoreRegistrationDelegates =>
         [
@@ -99,7 +58,7 @@ public class CouchbaseEmbeddingGenerationTests(CouchbaseEmbeddingGenerationTests
         [
             services => services
                 .AddSingleton(CouchbaseTestStore.Instance.Scope)
-                .AddCouchbaseSearchCollection<string, RecordWithAttributes>(this.CollectionName)
+                .AddCouchbaseQueryCollection<string, RecordWithAttributes>(this.CollectionName)
         ];
     }
 }
