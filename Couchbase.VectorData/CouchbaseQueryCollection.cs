@@ -191,10 +191,17 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
 
         var fieldsString = string.Join(", ", fields);
 
-        // Build the SQL query for pure vector search (no WHERE clause)
+        // Translate the optional filter into a SQL++ WHERE clause.
+        var whereClause = options?.Filter is null
+            ? null
+            : _queryFilterTranslator.Translate(options.Filter, _model);
+
+        var whereFragment = string.IsNullOrEmpty(whereClause) ? string.Empty : $"WHERE {whereClause}";
+
         var sqlQuery = $@"
             SELECT META().id AS _id, {fieldsString}, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance
             FROM `{collectionName}`
+            {whereFragment}
             ORDER BY _distance ASC
             LIMIT {top} OFFSET {options?.Skip ?? 0}";
 
