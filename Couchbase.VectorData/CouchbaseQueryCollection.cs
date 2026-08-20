@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Couchbase.KeyValue;
+using Couchbase.VectorData.Diagnostics;
 using Microsoft.Extensions.VectorData;
 using Newtonsoft.Json.Linq;
 
@@ -270,24 +271,23 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         FilteredRecordRetrievalOptions<TRecord>? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        Verify.NotNull(filter);
+
         var whereClause = _queryFilterTranslator.Translate(filter, _model);
-        if (string.IsNullOrEmpty(whereClause))
-        {
-            yield break;
-        }
+        var whereFragment = string.IsNullOrEmpty(whereClause) ? string.Empty : $"WHERE {whereClause}";
 
         var collectionName = Name;
 
         // Build field list for explicit selection (like Python implementation)
         var fields = new List<string>();
 
-        // Add all data properties
-        fields.AddRange(_model.DataProperties.Select(p => p.StorageName));
+        // Add all data properties (escaped with backticks for reserved words)
+        fields.AddRange(_model.DataProperties.Select(p => $"`{p.StorageName}`"));
 
         // Add vector properties if requested
         if (options?.IncludeVectors ?? false)
         {
-            fields.AddRange(_model.VectorProperties.Select(p => p.StorageName));
+            fields.AddRange(_model.VectorProperties.Select(p => $"`{p.StorageName}`"));
         }
 
         var fieldsString = string.Join(", ", fields);
@@ -295,7 +295,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         var sqlQuery = $@"
             SELECT META().id AS _id, {fieldsString}
             FROM `{collectionName}`
-            WHERE {whereClause}
+            {whereFragment}
             LIMIT {top}
             OFFSET {options?.Skip ?? 0}";
 

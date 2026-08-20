@@ -54,7 +54,7 @@ internal sealed class CouchbaseQueryFilterTranslator : FilterTranslatorBase
 
             // Special handling for bool property alone (r => r.Bool)
             case Expression e when e.Type == typeof(bool) && TryBindProperty(e, out var prop):
-                return GenerateEquality(prop.StorageName!, true);
+                return GenerateEquality(Escape(prop.StorageName!), true);
 
             case MethodCallExpression mc:
                 return TranslateMethodCall(mc);
@@ -67,11 +67,11 @@ internal sealed class CouchbaseQueryFilterTranslator : FilterTranslatorBase
     {
         if (TryBindProperty(left, out var property) && right is ConstantExpression { Value: var rightValue })
         {
-            return GenerateEquality(property.StorageName!, rightValue, negated);
+            return GenerateEquality(Escape(property.StorageName!), rightValue, negated);
         }
         if (TryBindProperty(right, out property) && left is ConstantExpression { Value: var leftValue })
         {
-            return GenerateEquality(property.StorageName!, leftValue, negated);
+            return GenerateEquality(Escape(property.StorageName!), leftValue, negated);
         }
         throw new NotSupportedException("Invalid equality/comparison in SQL filter.");
     }
@@ -103,7 +103,7 @@ internal sealed class CouchbaseQueryFilterTranslator : FilterTranslatorBase
             _ => throw new NotSupportedException($"Unsupported comparison: {comparison.NodeType}")
         };
 
-        return $"({property.StorageName} {op} {ToSqlLiteral(constant)})";
+        return $"({Escape(property.StorageName!)} {op} {ToSqlLiteral(constant)})";
     }
 
     private string TranslateMethodCall(MethodCallExpression methodCall)
@@ -134,14 +134,14 @@ internal sealed class CouchbaseQueryFilterTranslator : FilterTranslatorBase
         if (TryExtractConstantEnumerable(source, out var elements) && TryBindProperty(item, out var property))
         {
             var literals = elements.Select(ToSqlLiteral).ToArray();
-            return $"({property.StorageName} IN [{string.Join(", ", literals)}])";
+            return $"({Escape(property.StorageName!)} IN [{string.Join(", ", literals)}])";
         }
 
         // Or support property IN inline array when property is left and constant enumerable is right
         if (TryBindProperty(source, out property) && TryExtractConstantEnumerable(item, out elements))
         {
             var literals = elements.Select(ToSqlLiteral).ToArray();
-            return $"({property.StorageName} IN [{string.Join(", ", literals)}])";
+            return $"({Escape(property.StorageName!)} IN [{string.Join(", ", literals)}])";
         }
 
         throw new NotSupportedException("Unsupported Contains usage in SQL filter.");
@@ -162,6 +162,11 @@ internal sealed class CouchbaseQueryFilterTranslator : FilterTranslatorBase
         elements = Array.Empty<object?>();
         return false;
     }
+
+    /// <summary>
+    /// Escapes an identifier so SQL++ reserved words (e.g. Number, Type, Order) are valid field names.
+    /// </summary>
+    private static string Escape(string storageName) => $"`{storageName}`";
 
     private static string ToSqlLiteral(object? value)
     {
