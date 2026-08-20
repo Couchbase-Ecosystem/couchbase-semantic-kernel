@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CouchbaseConnector.VectorData</PackageId>
-        <Version>0.3.1</Version>
+        <Version>0.3.2</Version>
         <Authors>Couchbase and contributors</Authors>
         <Company>Couchbase</Company>
         <Description>Couchbase provider for Microsoft.Extensions.VectorData.</Description>
