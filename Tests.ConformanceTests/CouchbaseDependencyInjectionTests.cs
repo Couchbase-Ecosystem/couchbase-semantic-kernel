@@ -20,9 +20,9 @@ public class CouchbaseDependencyInjectionTests
     // ScopeProvider below reads CouchbaseTestStore.Instance.Scope, which throws until
     // the store is started, so start/stop it here. The store is reference-counted, so
     // this is safe alongside other test classes using the same singleton.
-    public Task InitializeAsync() => Support.CouchbaseTestStore.Instance.ReferenceCountingStartAsync();
+    public async ValueTask InitializeAsync() => await Support.CouchbaseTestStore.Instance.ReferenceCountingStartAsync();
 
-    public Task DisposeAsync() => Support.CouchbaseTestStore.Instance.ReferenceCountingStopAsync();
+    public async ValueTask DisposeAsync() => await Support.CouchbaseTestStore.Instance.ReferenceCountingStopAsync();
 
     private const string ConnectionString = "couchbase://localhost";
     private const string Username = "Administrator";
