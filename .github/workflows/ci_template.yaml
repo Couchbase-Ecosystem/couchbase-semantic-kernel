@@ -39,7 +39,7 @@ jobs:
           files: ${{ inputs.path != '' && format('{0}/**', inputs.path) || '' }}
 
       - name: .NET Cache Packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
@@ -98,7 +98,7 @@ jobs:
         global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
     
     - name: .NET Cache Packages
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
