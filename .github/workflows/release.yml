@@ -83,7 +83,7 @@ jobs:
           -o "${{ github.workspace }}/${{ env.PACKAGE_PATH }}"
 
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v6'
+        uses: 'actions/upload-artifact@v7'
         with:
           name: 'packages'
           path: '${{ github.workspace }}/${{ env.PACKAGE_PATH }}'
