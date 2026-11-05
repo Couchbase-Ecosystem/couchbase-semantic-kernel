@@ -21,13 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Retrieve the preceding commit to enable 'changed-files' to create a diff.
           fetch-depth: 2
 
       - name: .NET Setup
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
 
@@ -39,7 +39,7 @@ jobs:
           files: ${{ inputs.path != '' && format('{0}/**', inputs.path) || '' }}
 
       - name: .NET Cache Packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}
@@ -70,7 +70,7 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     
     - name: Find Solution
       id: find
@@ -93,12 +93,12 @@ jobs:
         EOF
     
     - name: .NET Setup
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: ${{ env.DOTNET_GLOBAL_JSON }}
     
     - name: .NET Cache Packages
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles(env.RESTORE_PATTERN) }}

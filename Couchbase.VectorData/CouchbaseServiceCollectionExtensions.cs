@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Couchbase;
+using Couchbase.Core.IO.Authentication.Authenticators;
 using Couchbase.KeyValue;
 using Couchbase.VectorData;
 using Microsoft.Extensions.AI;
@@ -126,10 +127,8 @@ public static class CouchbaseServiceCollectionExtensions
         {
             var clusterOptions = new ClusterOptions
             {
-                ConnectionString = connectionString,
-                UserName = username,
-                Password = password
-            };
+                ConnectionString = connectionString
+            }.WithAuthenticator(new PasswordAuthenticator(username, password));
 
             var cluster = Cluster.ConnectAsync(clusterOptions).GetAwaiter().GetResult();
             var bucket = cluster.BucketAsync(bucketName).AsTask().GetAwaiter().GetResult();
@@ -241,7 +240,7 @@ public static class CouchbaseServiceCollectionExtensions
             ? options // There is nothing to change.
             : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
     }
-    
+
     private static CouchbaseSearchCollectionOptions? GetSearchCollectionOptions(IServiceProvider sp, Func<IServiceProvider, CouchbaseSearchCollectionOptions?>? optionsProvider)
     {
         var options = optionsProvider?.Invoke(sp);
@@ -255,7 +254,7 @@ public static class CouchbaseServiceCollectionExtensions
             ? options // There is nothing to change.
             : new(options) { EmbeddingGenerator = embeddingGenerator }; // Create a brand new copy in order to avoid modifying the original options.
     }
-    
+
     private static CouchbaseQueryCollectionOptions? GetQueryCollectionOptions(IServiceProvider sp, Func<IServiceProvider, CouchbaseQueryCollectionOptions?>? optionsProvider)
     {
         var options = optionsProvider?.Invoke(sp);
