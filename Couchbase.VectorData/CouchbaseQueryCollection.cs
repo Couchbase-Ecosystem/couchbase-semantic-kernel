@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using Couchbase.KeyValue;
 using Couchbase.VectorData.Diagnostics;
@@ -50,21 +49,21 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
     /// </summary>
     // protected override async Task EnsureIndexExistsAsync(CancellationToken cancellationToken)
     // {
-        // switch (_indexType)
-        // {
-        //     case CouchbaseIndexType.Hyperscale:
-        //     case CouchbaseIndexType.Composite:
-        //         await CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken).ConfigureAwait(false);
-        //         break;
-        //     case CouchbaseIndexType.Search:
-        //         throw new InvalidOperationException(
-        //             "Search index type is not supported for CouchbaseQueryCollection. " +
-        //             "Use CouchbaseSearchCollection instead.");
-        //     default:
-        //         throw new InvalidOperationException(
-        //             $"Unsupported index type '{_indexType}' for CouchbaseQueryCollection. " +
-        //             "Supported types are: Hyperscale, Composite");
-        // }
+    // switch (_indexType)
+    // {
+    //     case CouchbaseIndexType.Hyperscale:
+    //     case CouchbaseIndexType.Composite:
+    //         await CreateVectorIndexIfNotExistsAsync(_indexType, cancellationToken).ConfigureAwait(false);
+    //         break;
+    //     case CouchbaseIndexType.Search:
+    //         throw new InvalidOperationException(
+    //             "Search index type is not supported for CouchbaseQueryCollection. " +
+    //             "Use CouchbaseSearchCollection instead.");
+    //     default:
+    //         throw new InvalidOperationException(
+    //             $"Unsupported index type '{_indexType}' for CouchbaseQueryCollection. " +
+    //             "Supported types are: Hyperscale, Composite");
+    // }
     // }
 
     /// <summary>
@@ -178,19 +177,8 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         var similarityMetric = CouchbaseQueryCollectionCreateMapping.MapSimilarityMetric(_queryOptions.SimilarityMetric);
         var formattedVector = CouchbaseQueryCollectionCreateMapping.FormatVectorForSql(searchVector.ToArray().AsMemory());
 
-        // Build field list for explicit selection
-        var fields = new List<string>();
-
-        // Add all data properties (escaped with backticks for reserved words)
-        fields.AddRange(_model.DataProperties.Select(p => $"`{p.StorageName}`"));
-
-        // Add vector properties if requested
-        if (options?.IncludeVectors ?? false)
-        {
-            fields.AddRange(_model.VectorProperties.Select(p => $"`{p.StorageName}`"));
-        }
-
-        var fieldsString = string.Join(", ", fields);
+        var includeVectors = options?.IncludeVectors ?? false;
+        var selectList = CouchbaseQueryRowMapping.BuildSelectList(_model, includeVectors);
 
         // Translate the optional filter into a SQL++ WHERE clause.
         var whereClause = options?.Filter is null
@@ -200,7 +188,7 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         var whereFragment = string.IsNullOrEmpty(whereClause) ? string.Empty : $"WHERE {whereClause}";
 
         var sqlQuery = $@"
-            SELECT META().id AS _id, {fieldsString}, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance
+            SELECT {selectList}, ANN_DISTANCE({vectorField}, {formattedVector}, '{similarityMetric}') AS _distance
             FROM `{collectionName}`
             {whereFragment}
             ORDER BY _distance ASC
@@ -213,39 +201,15 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Handle JObject instances returned by Couchbase QueryAsync
-            if (row is not JObject jObject)
-            {
-                throw new InvalidOperationException($"Query result row is not a JObject.");
-            }
-
-            // Extract document ID and distance (should be flat structure now with explicit field selection)
-            var docId = jObject["_id"]?.Value<string>();
-            if (string.IsNullOrEmpty(docId))
+            var jObject = CouchbaseQueryRowMapping.AsJObject((object?)row);
+            var storageDocument = CouchbaseQueryRowMapping.ToStorageDocument(jObject, _model.KeyProperty.StorageName);
+            if (storageDocument is null)
             {
                 continue;
             }
 
             var distance = jObject["_distance"]?.Value<double>() ?? 0.0;
-
-            // Create clean document content (remove metadata fields starting with _)
-            var documentContent = new JObject();
-            foreach (var property in jObject.Properties())
-            {
-                if (!property.Name.StartsWith("_"))
-                {
-                    documentContent[property.Name] = property.Value;
-                }
-            }
-
-            // Add the document key back into the content (since Couchbase stores key outside document)
-            // The mapper expects the key field to be present in the document for proper mapping
-            documentContent[_model.KeyProperty.StorageName] = docId;
-
-            // Convert JObject to System.Text.Json byte array for the mapper
-            var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
-            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
-            var record = _mapper.MapFromStorageToDataModel(jsonBytes, options?.IncludeVectors ?? false);
+            var record = _mapper.MapFromStorageToDataModel(storageDocument, includeVectors);
 
             // Use distance directly as score
             // Note: Lower distance values indicate better matches
@@ -278,22 +242,11 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
 
         var collectionName = Name;
 
-        // Build field list for explicit selection (like Python implementation)
-        var fields = new List<string>();
-
-        // Add all data properties (escaped with backticks for reserved words)
-        fields.AddRange(_model.DataProperties.Select(p => $"`{p.StorageName}`"));
-
-        // Add vector properties if requested
-        if (options?.IncludeVectors ?? false)
-        {
-            fields.AddRange(_model.VectorProperties.Select(p => $"`{p.StorageName}`"));
-        }
-
-        var fieldsString = string.Join(", ", fields);
+        var includeVectors = options?.IncludeVectors ?? false;
+        var selectList = CouchbaseQueryRowMapping.BuildSelectList(_model, includeVectors);
 
         var sqlQuery = $@"
-            SELECT META().id AS _id, {fieldsString}
+            SELECT {selectList}
             FROM `{collectionName}`
             {whereFragment}
             LIMIT {top}
@@ -306,37 +259,14 @@ public class CouchbaseQueryCollection<TKey, TRecord> : CouchbaseCollectionBase<T
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Handle JObject instances returned by Couchbase QueryAsync
-            if (row is not JObject jObject)
-            {
-                throw new InvalidOperationException($"Query result row is not a JObject");
-            }
-
-            // Extract document ID (should be flat structure now with explicit field selection)
-            var docId = jObject["_id"]?.Value<string>();
-            if (string.IsNullOrEmpty(docId))
+            var storageDocument = CouchbaseQueryRowMapping.ToStorageDocument(
+                CouchbaseQueryRowMapping.AsJObject((object?)row), _model.KeyProperty.StorageName);
+            if (storageDocument is null)
             {
                 continue;
             }
 
-            // Create clean document content (remove metadata fields starting with _)
-            var documentContent = new JObject();
-            foreach (var property in jObject.Properties())
-            {
-                if (!property.Name.StartsWith("_"))
-                {
-                    documentContent[property.Name] = property.Value;
-                }
-            }
-
-            // Add the document key back into the content (since Couchbase stores key outside document)
-            // The mapper expects the key field to be present in the document for proper mapping
-            documentContent[_model.KeyProperty.StorageName] = docId;
-
-            // Convert JObject to System.Text.Json byte array for the mapper
-            var jsonString = documentContent.ToString(Newtonsoft.Json.Formatting.None);
-            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
-            var record = _mapper.MapFromStorageToDataModel(jsonBytes, options?.IncludeVectors ?? false);
+            var record = _mapper.MapFromStorageToDataModel(storageDocument, includeVectors);
 
             yield return record;
         }
